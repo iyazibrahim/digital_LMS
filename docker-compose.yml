@@ -1,10 +1,13 @@
 # Digital Penang LMS — production stack
 # Domain: lms.iyazbrhm.cloud
 # Host port 8090 → container nginx 8080 (Cloudflare Tunnel / local access)
-# Image includes frappe + payments + lms (official ghcr.io/frappe/lms often lacks payments)
+#
+# Image is HARDCODED on purpose. Official ghcr.io/frappe/lms:v2.52.0 has lms but
+# NOT payments → install-app lms fails with ModuleNotFoundError: payments.
+# Do not override this with IMAGE_NAME=ghcr.io/frappe/lms in Dokploy.
 
 x-custom-image: &custom_image
-  image: ${IMAGE_NAME:-amirul123/lms-custom}:${VERSION:-latest}
+  image: amirul123/lms-custom:latest
   pull_policy: ${PULL_POLICY:-always}
   restart: unless-stopped
 
@@ -180,6 +183,19 @@ services:
         ls -1 apps
         cat sites/apps.txt || true
 
+        if [[ ! -d apps/payments ]]; then
+          echo "FATAL: apps/payments is missing from this Docker image."
+          echo "You are still running the broken official image (frappe + lms only)."
+          echo "Expected image: amirul123/lms-custom:latest"
+          echo "Fix: remove IMAGE_NAME/VERSION overrides in Dokploy, git pull, then:"
+          echo "  docker compose down -v && docker compose pull && docker compose up -d"
+          exit 1
+        fi
+        if [[ ! -d apps/lms ]]; then
+          echo "FATAL: apps/lms is missing from this Docker image."
+          exit 1
+        fi
+
         if [[ ! -d "sites/$${SITE_NAME}" ]]; then
           echo "Creating site $${SITE_NAME}"
           bench new-site \
@@ -195,16 +211,9 @@ services:
         bench --site "$${SITE_NAME}" set-config host_name "https://$${SITE_NAME}" || true
 
         echo "Installing payments (required by Learning)..."
-        bench --site "$${SITE_NAME}" install-app payments || {
-          echo "WARN: install-app payments returned non-zero (may already be installed)"
-        }
+        bench --site "$${SITE_NAME}" install-app payments
         echo "Installing lms..."
-        bench --site "$${SITE_NAME}" install-app lms || {
-          echo "ERROR: install-app lms failed"
-          bench --site "$${SITE_NAME}" list-apps || true
-          ls -1 apps || true
-          exit 1
-        }
+        bench --site "$${SITE_NAME}" install-app lms
 
         echo "Installed apps:"
         bench --site "$${SITE_NAME}" list-apps

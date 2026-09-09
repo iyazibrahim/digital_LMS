@@ -2,7 +2,7 @@
 
 Production Docker Compose stack for **Frappe Learning (LMS)** — free & open source — branded as Digital Penang LMS. Served at **https://lms.iyazbrhm.cloud** via **Cloudflare Tunnel** to host port **8090**.
 
-Uses image **`amirul123/lms-custom`** (includes `frappe` + **`payments`** + **`lms`**). The official `ghcr.io/frappe/lms` image often fails to install Learning because the free `payments` dependency is missing.
+Uses image **`amirul123/lms-custom:latest`** (hardcoded in compose — includes `frappe` + **`payments`** + **`lms`**). The official `ghcr.io/frappe/lms` image fails Learning install because `payments` is missing.
 
 ## Quick links after deploy
 
@@ -22,38 +22,28 @@ Uses image **`amirul123/lms-custom`** (includes `frappe` + **`payments`** + **`l
 | `.env.example` | Environment template |
 | `workflow.md` | Project status log |
 
-## Fresh deploy (required if Learning still 404)
+## Fresh deploy (your error = wrong image still running)
 
-Your old site is Frappe-only data. **You must wipe volumes** and ensure Dokploy/server `.env` uses the custom image:
+`ModuleNotFoundError: No module named 'payments'` with `frappe 15.104.0` and apps `frappe` + `lms` means the server is still using **`ghcr.io/frappe/lms`**, not `amirul123/lms-custom`.
 
-```env
-IMAGE_NAME=amirul123/lms-custom
-VERSION=latest
-```
-
-Do **not** leave `IMAGE_NAME=ghcr.io/frappe/lms`.
+1. In Dokploy **Environment**, **delete** `IMAGE_NAME` and `VERSION` if present.
+2. On the server:
 
 ```bash
 git pull
-# sync .env with .env.example image settings
-
 docker compose down -v
 docker compose pull
+docker images | grep -E 'lms-custom|frappe/lms'
+# must show amirul123/lms-custom — NOT only ghcr.io/frappe/lms
 docker compose up -d
 docker compose logs -f create-site
 ```
 
-You must see `Site ... ready with Learning` and `list-apps` including `lms`.
+`create-site` now **aborts early** if `apps/payments` is missing, so you cannot get a silent Frappe-only site again.
 
-If containers are already on the new image but the site still lacks LMS:
+Expect image apps: `frappe`, `lms`, `payments` (Frappe 16.x on the custom image).
 
-```bash
-bash scripts/ensure-lms.sh
-```
-
-Then open https://lms.iyazbrhm.cloud/lms
-
-`down -v` **deletes** MariaDB and site data.
+`down -v` deletes old MariaDB/site data.
 
 ## Cloudflare Tunnel
 

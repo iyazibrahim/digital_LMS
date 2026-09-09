@@ -31,11 +31,11 @@
 - Frontend publishes `${HTTP_PUBLISH_PORT:-8090}:8080` instead of Dokploy-only `expose: 8080`.
 - Docs updated for Cloudflare Tunnel ingress `http://localhost:8090`.
 
-### 2026-09-09 — Harden create-site install
+### 2026-09-09 — Hardcode working image
 
-- create-site now creates site then explicitly runs `install-app payments` and `install-app lms` (no INSTALL_APP_ARGS).
-- Added `scripts/ensure-lms.sh` for manual recovery on the server.
-- Documented that Dokploy `.env` must use `amirul123/lms-custom`, not official image.
+- User logs showed `frappe 15.104.0` + apps `frappe,lms` only → still on official image.
+- Hardcoded `image: amirul123/lms-custom:latest` (no IMAGE_NAME override).
+- create-site fails fast if `apps/payments` missing.
 
 ## Next steps
 

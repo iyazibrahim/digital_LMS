@@ -1,9 +1,10 @@
 # Digital Penang LMS — production stack
 # Domain: lms.iyazbrhm.cloud
 # Host port 8090 → container nginx 8080 (Cloudflare Tunnel / local access)
+# Image includes frappe + payments + lms (official ghcr.io/frappe/lms often lacks payments)
 
 x-custom-image: &custom_image
-  image: ${IMAGE_NAME:-ghcr.io/frappe/lms}:${VERSION:-v2.52.0}
+  image: ${IMAGE_NAME:-amirul123/lms-custom}:${VERSION:-latest}
   pull_policy: ${PULL_POLICY:-always}
   restart: unless-stopped
 
@@ -178,6 +179,11 @@ services:
         if [[ -d "sites/$${SITE_NAME}" ]]; then
           echo "$${SITE_NAME} already exists";
           bench --site $${SITE_NAME} set-config host_name "https://$${SITE_NAME}" || true;
+          if ! bench --site $${SITE_NAME} list-apps 2>/dev/null | grep -qw lms; then
+            echo "lms not installed — installing payments + lms";
+            bench --site $${SITE_NAME} install-app payments;
+            bench --site $${SITE_NAME} install-app lms;
+          fi;
           exit 0;
         fi;
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=root --db-root-password=$${DB_ROOT_PASSWORD} $${INSTALL_APP_ARGS} $${SITE_NAME};
@@ -186,7 +192,7 @@ services:
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      INSTALL_APP_ARGS: ${INSTALL_APP_ARGS:---install-app lms}
+      INSTALL_APP_ARGS: ${INSTALL_APP_ARGS:---install-app payments --install-app lms}
       SITE_NAME: ${SITE_NAME:-lms.iyazbrhm.cloud}
     volumes:
       - sites:/home/frappe/frappe-bench/sites

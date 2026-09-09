@@ -1,8 +1,8 @@
 # Digital Penang LMS
 
-Production Docker Compose stack for **Frappe Learning (LMS)**, branded as Digital Penang LMS for testing. Served at **https://lms.iyazbrhm.cloud** via **Cloudflare Tunnel** to host port **8090**.
+Production Docker Compose stack for **Frappe Learning (LMS)** — free & open source — branded as Digital Penang LMS. Served at **https://lms.iyazbrhm.cloud** via **Cloudflare Tunnel** to host port **8090**.
 
-This is **not** the official Frappe LMS development compose (`frappe/bench` + `lms.localhost:8000`). It uses the production image `ghcr.io/frappe/lms:v2.52.0` with MariaDB, Redis, workers, and nginx (container `:8080`, published as host **`:8090`**).
+Uses image **`amirul123/lms-custom`** (includes `frappe` + **`payments`** + **`lms`**). The official `ghcr.io/frappe/lms` image often fails to install Learning because the free `payments` dependency is missing.
 
 ## Quick links after deploy
 
@@ -22,25 +22,37 @@ This is **not** the official Frappe LMS development compose (`frappe/bench` + `l
 | `.env.example` | Environment template |
 | `workflow.md` | Project status log |
 
-## Cloudflare Tunnel deploy
+## Fresh deploy (required if you already have a broken Frappe-only site)
 
-1. On the server, copy env and start the stack:
+If `/lms` returns 404 but `/` or `/app` works, wipe volumes and recreate so `payments` + `lms` install cleanly:
 
 ```bash
-cp .env.example .env
+git pull
+cp .env.example .env   # or update existing .env — see IMAGE_NAME / INSTALL_APP_ARGS
 # Set strong ADMIN_PASSWORD and DB_ROOT_PASSWORD
+
+docker compose down -v
+docker compose pull
 docker compose up -d
 ```
 
-2. Confirm LMS answers locally: `http://127.0.0.1:8090/lms` (after `create-site` finishes).
+Watch site creation:
 
-3. Point Cloudflare Tunnel ingress for `lms.iyazbrhm.cloud` to:
+```bash
+docker compose logs -f create-site
+```
+
+When finished, open https://lms.iyazbrhm.cloud/lms
+
+`down -v` **deletes** MariaDB and site data. Use only for testing / first fix.
+
+## Cloudflare Tunnel
+
+Point hostname `lms.iyazbrhm.cloud` to:
 
 ```text
 http://localhost:8090
 ```
-
-Example `config.yml` snippet:
 
 ```yaml
 ingress:
@@ -49,36 +61,24 @@ ingress:
   - service: http_status:404
 ```
 
-4. In Cloudflare DNS, use a **CNAME** (or route) for `lms` → your tunnel (Zero Trust / cloudflared), not a public A record to the origin unless you intend that.
+## Without wiping (optional recovery)
 
-5. SSL/TLS mode: **Full** is fine (tunnel terminates to HTTP on the origin).
-
-6. Open https://lms.iyazbrhm.cloud/lms and sign in as Administrator.
-
-7. Rebrand in LMS / System Settings (title, logo) to **Digital Penang LMS**.
-
-### Dokploy + Cloudflare Tunnel
-
-If you still run Compose on Dokploy: deploy the stack, do **not** rely on Dokploy domain routing for this site. Publish/use host port **8090**, and attach the Cloudflare Tunnel to that port (or to the server’s published `8090`).
-
-## Local smoke test
-
-Requires Docker Desktop.
+If the new image is running and apps are present in the container:
 
 ```bash
-cp .env.example .env
-# Edit ADMIN_PASSWORD and DB_ROOT_PASSWORD
-docker compose up -d
-# Open http://127.0.0.1:8090/lms
+docker compose exec backend bench --site lms.iyazbrhm.cloud list-apps
+docker compose exec backend bench --site lms.iyazbrhm.cloud install-app payments
+docker compose exec backend bench --site lms.iyazbrhm.cloud install-app lms
 ```
+
+Prefer a clean `down -v` + `up` if the old site was created without Learning.
 
 ## Notes
 
-- Nginx inside the container still listens on **8080**; only the **host** mapping is **8090** (`HTTP_PUBLISH_PORT`).
-- Paid course checkout needs the `payments` app; the official LMS image does not include it.
-- Image tag is pinned to `v2.52.0` because some newer `stable` / `main` tags have shipped without the LMS app baked in.
+- Frappe Learning is **free**. The `payments` app is also free open source (needed for LMS install / paid-course features).
+- Nginx inside the container listens on **8080**; host mapping is **8090** (`HTTP_PUBLISH_PORT`).
 - Do not commit a real `.env` file.
 
 ## License / upstream
 
-Based on [Frappe Learning](https://github.com/frappe/lms) and the Frappe Docker production pattern.
+Based on [Frappe Learning](https://github.com/frappe/lms). Community image: [amirul123/lms-custom](https://hub.docker.com/r/amirul123/lms-custom).

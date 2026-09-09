@@ -31,12 +31,11 @@
 - Frontend publishes `${HTTP_PUBLISH_PORT:-8090}:8080` instead of Dokploy-only `expose: 8080`.
 - Docs updated for Cloudflare Tunnel ingress `http://localhost:8090`.
 
-### 2026-09-09 — Fix Learning install (payments + lms)
+### 2026-09-09 — Harden create-site install
 
-- Switched default image to `amirul123/lms-custom:latest`.
-- `INSTALL_APP_ARGS=--install-app payments --install-app lms`.
-- `create-site` now installs payments/lms if the site exists but `lms` is missing.
-- Documented `docker compose down -v` redeploy for broken Frappe-only sites.
+- create-site now creates site then explicitly runs `install-app payments` and `install-app lms` (no INSTALL_APP_ARGS).
+- Added `scripts/ensure-lms.sh` for manual recovery on the server.
+- Documented that Dokploy `.env` must use `amirul123/lms-custom`, not official image.
 
 ## Next steps
 

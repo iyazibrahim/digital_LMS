@@ -159,40 +159,59 @@ services:
     restart: on-failure
     entrypoint: ["bash", "-c"]
     command:
-      - >
-        wait-for-it -t 120 db:3306;
-        wait-for-it -t 120 redis-cache:6379;
-        wait-for-it -t 120 redis-queue:6379;
-        export start=`date +%s`;
-        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] &&
-              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] &&
-              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
-        do
-          echo "Waiting for sites/common_site_config.json to be created";
-          sleep 5;
+      - |
+        set -e
+        wait-for-it -t 120 db:3306
+        wait-for-it -t 120 redis-cache:6379
+        wait-for-it -t 120 redis-queue:6379
+        export start=`date +%s`
+        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
+              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
+              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]]; do
+          echo "Waiting for sites/common_site_config.json to be created"
+          sleep 5
           if (( `date +%s`-start > 120 )); then
-            echo "could not find sites/common_site_config.json with required keys";
-            exit 1;
-          fi;
-        done;
-        echo "sites/common_site_config.json found";
-        if [[ -d "sites/$${SITE_NAME}" ]]; then
-          echo "$${SITE_NAME} already exists";
-          bench --site $${SITE_NAME} set-config host_name "https://$${SITE_NAME}" || true;
-          if ! bench --site $${SITE_NAME} list-apps 2>/dev/null | grep -qw lms; then
-            echo "lms not installed — installing payments + lms";
-            bench --site $${SITE_NAME} install-app payments;
-            bench --site $${SITE_NAME} install-app lms;
-          fi;
-          exit 0;
-        fi;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=root --db-root-password=$${DB_ROOT_PASSWORD} $${INSTALL_APP_ARGS} $${SITE_NAME};
-        bench --site $${SITE_NAME} set-config host_name "https://$${SITE_NAME}";
-        echo "Site $${SITE_NAME} created";
+            echo "could not find sites/common_site_config.json with required keys"
+            exit 1
+          fi
+        done
+        echo "sites/common_site_config.json found"
+        echo "Apps available in image:"
+        ls -1 apps
+        cat sites/apps.txt || true
+
+        if [[ ! -d "sites/$${SITE_NAME}" ]]; then
+          echo "Creating site $${SITE_NAME}"
+          bench new-site \
+            --mariadb-user-host-login-scope='%' \
+            --admin-password="$${ADMIN_PASSWORD}" \
+            --db-root-username=root \
+            --db-root-password="$${DB_ROOT_PASSWORD}" \
+            "$${SITE_NAME}"
+        else
+          echo "Site $${SITE_NAME} already exists"
+        fi
+
+        bench --site "$${SITE_NAME}" set-config host_name "https://$${SITE_NAME}" || true
+
+        echo "Installing payments (required by Learning)..."
+        bench --site "$${SITE_NAME}" install-app payments || {
+          echo "WARN: install-app payments returned non-zero (may already be installed)"
+        }
+        echo "Installing lms..."
+        bench --site "$${SITE_NAME}" install-app lms || {
+          echo "ERROR: install-app lms failed"
+          bench --site "$${SITE_NAME}" list-apps || true
+          ls -1 apps || true
+          exit 1
+        }
+
+        echo "Installed apps:"
+        bench --site "$${SITE_NAME}" list-apps
+        echo "Site $${SITE_NAME} ready with Learning"
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      INSTALL_APP_ARGS: ${INSTALL_APP_ARGS:---install-app payments --install-app lms}
       SITE_NAME: ${SITE_NAME:-lms.iyazbrhm.cloud}
     volumes:
       - sites:/home/frappe/frappe-bench/sites

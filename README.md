@@ -22,29 +22,38 @@ Uses image **`amirul123/lms-custom`** (includes `frappe` + **`payments`** + **`l
 | `.env.example` | Environment template |
 | `workflow.md` | Project status log |
 
-## Fresh deploy (required if you already have a broken Frappe-only site)
+## Fresh deploy (required if Learning still 404)
 
-If `/lms` returns 404 but `/` or `/app` works, wipe volumes and recreate so `payments` + `lms` install cleanly:
+Your old site is Frappe-only data. **You must wipe volumes** and ensure Dokploy/server `.env` uses the custom image:
+
+```env
+IMAGE_NAME=amirul123/lms-custom
+VERSION=latest
+```
+
+Do **not** leave `IMAGE_NAME=ghcr.io/frappe/lms`.
 
 ```bash
 git pull
-cp .env.example .env   # or update existing .env — see IMAGE_NAME / INSTALL_APP_ARGS
-# Set strong ADMIN_PASSWORD and DB_ROOT_PASSWORD
+# sync .env with .env.example image settings
 
 docker compose down -v
 docker compose pull
 docker compose up -d
-```
-
-Watch site creation:
-
-```bash
 docker compose logs -f create-site
 ```
 
-When finished, open https://lms.iyazbrhm.cloud/lms
+You must see `Site ... ready with Learning` and `list-apps` including `lms`.
 
-`down -v` **deletes** MariaDB and site data. Use only for testing / first fix.
+If containers are already on the new image but the site still lacks LMS:
+
+```bash
+bash scripts/ensure-lms.sh
+```
+
+Then open https://lms.iyazbrhm.cloud/lms
+
+`down -v` **deletes** MariaDB and site data.
 
 ## Cloudflare Tunnel
 

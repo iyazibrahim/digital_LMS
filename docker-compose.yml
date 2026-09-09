@@ -1,0 +1,257 @@
+# Digital Penang LMS — production stack for Dokploy
+# Domain: lms.iyazbrhm.cloud
+# Route Dokploy domain → service "frontend", port 8080
+
+x-custom-image: &custom_image
+  image: ${IMAGE_NAME:-ghcr.io/frappe/lms}:${VERSION:-v2.52.0}
+  pull_policy: ${PULL_POLICY:-always}
+  restart: unless-stopped
+
+services:
+  backend:
+    <<: *custom_image
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      create-site:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wait-for-it", "0.0.0.0:8000"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  frontend:
+    <<: *custom_image
+    command:
+      - nginx-entrypoint.sh
+    depends_on:
+      backend:
+        condition: service_healthy
+      websocket:
+        condition: service_started
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
+      UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
+      UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
+      PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+    # Dokploy Traefik routes to this port — do not publish to host
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wait-for-it", "0.0.0.0:8080"]
+      interval: 5s
+      timeout: 30s
+      retries: 30
+      start_period: 30s
+
+  websocket:
+    <<: *custom_image
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+    healthcheck:
+      test: ["CMD", "wait-for-it", "0.0.0.0:9000"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+
+  queue-short:
+    <<: *custom_image
+    command:
+      - bench
+      - worker
+      - --queue
+      - short,default
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+
+  queue-long:
+    <<: *custom_image
+    command:
+      - bench
+      - worker
+      - --queue
+      - long,default,short
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+
+  scheduler:
+    <<: *custom_image
+    command:
+      - bench
+      - schedule
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      create-site:
+        condition: service_completed_successfully
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+
+  configurator:
+    <<: *custom_image
+    restart: on-failure
+    entrypoint: ["bash", "-c"]
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $${DB_HOST};
+        bench set-config -gp db_port $${DB_PORT};
+        bench set-config -g redis_cache "redis://$${REDIS_CACHE}";
+        bench set-config -g redis_queue "redis://$${REDIS_QUEUE}";
+        bench set-config -g redis_socketio "redis://$${REDIS_QUEUE}";
+        bench set-config -gp socketio_port $${SOCKETIO_PORT};
+        echo "Configurator completed";
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      REDIS_CACHE: ${REDIS_CACHE:-redis-cache:6379}
+      REDIS_QUEUE: ${REDIS_QUEUE:-redis-queue:6379}
+      SOCKETIO_PORT: ${SOCKETIO_PORT:-9000}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+
+  create-site:
+    <<: *custom_image
+    restart: on-failure
+    entrypoint: ["bash", "-c"]
+    command:
+      - >
+        wait-for-it -t 120 db:3306;
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        export start=`date +%s`;
+        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] &&
+              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] &&
+              [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
+        do
+          echo "Waiting for sites/common_site_config.json to be created";
+          sleep 5;
+          if (( `date +%s`-start > 120 )); then
+            echo "could not find sites/common_site_config.json with required keys";
+            exit 1;
+          fi;
+        done;
+        echo "sites/common_site_config.json found";
+        if [[ -d "sites/$${SITE_NAME}" ]]; then
+          echo "$${SITE_NAME} already exists";
+          bench --site $${SITE_NAME} set-config host_name "https://$${SITE_NAME}" || true;
+          exit 0;
+        fi;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=root --db-root-password=$${DB_ROOT_PASSWORD} $${INSTALL_APP_ARGS} $${SITE_NAME};
+        bench --site $${SITE_NAME} set-config host_name "https://$${SITE_NAME}";
+        echo "Site $${SITE_NAME} created";
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      INSTALL_APP_ARGS: ${INSTALL_APP_ARGS:---install-app lms}
+      SITE_NAME: ${SITE_NAME:-lms.iyazbrhm.cloud}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:10.8
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - bench-network
+
+  redis-cache:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-cache-data:/data
+    networks:
+      - bench-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-queue:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - bench-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sites:
+  db-data:
+  redis-cache-data:
+  redis-queue-data:
+
+networks:
+  bench-network:
+    driver: bridge

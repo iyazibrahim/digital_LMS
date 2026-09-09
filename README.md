@@ -1,8 +1,8 @@
 # Digital Penang LMS
 
-Production Docker Compose stack for **Frappe Learning (LMS)**, branded as Digital Penang LMS for testing. Designed for deployment on **Dokploy** at **https://lms.iyazbrhm.cloud**.
+Production Docker Compose stack for **Frappe Learning (LMS)**, branded as Digital Penang LMS for testing. Served at **https://lms.iyazbrhm.cloud** via **Cloudflare Tunnel** to host port **8090**.
 
-This is **not** the official Frappe LMS development compose (`frappe/bench` + `lms.localhost:8000`). It uses the production image `ghcr.io/frappe/lms:v2.52.0` with MariaDB, Redis, workers, and nginx on port **8080**.
+This is **not** the official Frappe LMS development compose (`frappe/bench` + `lms.localhost:8000`). It uses the production image `ghcr.io/frappe/lms:v2.52.0` with MariaDB, Redis, workers, and nginx (container `:8080`, published as host **`:8090`**).
 
 ## Quick links after deploy
 
@@ -10,6 +10,7 @@ This is **not** the official Frappe LMS development compose (`frappe/bench` + `l
 |--------|-----|
 | Learning portal | https://lms.iyazbrhm.cloud/lms |
 | Frappe desk | https://lms.iyazbrhm.cloud/app |
+| Direct (server) | http://127.0.0.1:8090/lms |
 
 **Login:** `Administrator` / value of `ADMIN_PASSWORD`
 
@@ -18,28 +19,49 @@ This is **not** the official Frappe LMS development compose (`frappe/bench` + `l
 | File | Purpose |
 |------|---------|
 | `docker-compose.yml` | Full production stack |
-| `.env.example` | Environment template for Dokploy / local |
+| `.env.example` | Environment template |
 | `workflow.md` | Project status log |
 
-## Dokploy deploy
+## Cloudflare Tunnel deploy
 
-1. Point DNS **A record** `lms.iyazbrhm.cloud` at your Dokploy server IP.
-2. Create a project → **Compose** service from this GitHub repo (`iyazibrahim/digital_LMS`).
-3. Enable **Isolated Deployments** (recommended).
-4. In **Environment**, paste variables from `.env.example` and set strong:
-   - `ADMIN_PASSWORD`
-   - `DB_ROOT_PASSWORD`
-5. In **Domains**, add:
-   - Host: `lms.iyazbrhm.cloud`
-   - Service: **`frontend`**
-   - Port: **`8080`**
-   - HTTPS + Let's Encrypt
-6. Deploy. First run can take several minutes while images pull and `create-site` installs LMS.
-7. Watch logs for the `create-site` container until the site exists.
-8. Open https://lms.iyazbrhm.cloud/lms and sign in as Administrator.
-9. Rebrand in LMS / System Settings (title, logo) to **Digital Penang LMS**.
+1. On the server, copy env and start the stack:
 
-## Local smoke test (optional)
+```bash
+cp .env.example .env
+# Set strong ADMIN_PASSWORD and DB_ROOT_PASSWORD
+docker compose up -d
+```
+
+2. Confirm LMS answers locally: `http://127.0.0.1:8090/lms` (after `create-site` finishes).
+
+3. Point Cloudflare Tunnel ingress for `lms.iyazbrhm.cloud` to:
+
+```text
+http://localhost:8090
+```
+
+Example `config.yml` snippet:
+
+```yaml
+ingress:
+  - hostname: lms.iyazbrhm.cloud
+    service: http://localhost:8090
+  - service: http_status:404
+```
+
+4. In Cloudflare DNS, use a **CNAME** (or route) for `lms` → your tunnel (Zero Trust / cloudflared), not a public A record to the origin unless you intend that.
+
+5. SSL/TLS mode: **Full** is fine (tunnel terminates to HTTP on the origin).
+
+6. Open https://lms.iyazbrhm.cloud/lms and sign in as Administrator.
+
+7. Rebrand in LMS / System Settings (title, logo) to **Digital Penang LMS**.
+
+### Dokploy + Cloudflare Tunnel
+
+If you still run Compose on Dokploy: deploy the stack, do **not** rely on Dokploy domain routing for this site. Publish/use host port **8090**, and attach the Cloudflare Tunnel to that port (or to the server’s published `8090`).
+
+## Local smoke test
 
 Requires Docker Desktop.
 
@@ -47,19 +69,16 @@ Requires Docker Desktop.
 cp .env.example .env
 # Edit ADMIN_PASSWORD and DB_ROOT_PASSWORD
 docker compose up -d
+# Open http://127.0.0.1:8090/lms
 ```
-
-For local browser access without Dokploy, either:
-
-- Map `lms.iyazbrhm.cloud` in your hosts file to `127.0.0.1` and temporarily publish frontend (`ports: ["8080:8080"]`), or
-- Set `SITE_NAME` / `FRAPPE_SITE_NAME_HEADER` to `lms.localhost` for a local-only site name.
 
 ## Notes
 
-- Paid course checkout needs the `payments` app; the official LMS image does not include it. Free courses, batches, quizzes, and certificates work.
+- Nginx inside the container still listens on **8080**; only the **host** mapping is **8090** (`HTTP_PUBLISH_PORT`).
+- Paid course checkout needs the `payments` app; the official LMS image does not include it.
 - Image tag is pinned to `v2.52.0` because some newer `stable` / `main` tags have shipped without the LMS app baked in.
 - Do not commit a real `.env` file.
 
 ## License / upstream
 
-Based on [Frappe Learning](https://github.com/frappe/lms) and the Frappe Docker / Dokploy production pattern.
+Based on [Frappe Learning](https://github.com/frappe/lms) and the Frappe Docker production pattern.

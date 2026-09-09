@@ -1,6 +1,6 @@
-# Digital Penang LMS — production stack for Dokploy
+# Digital Penang LMS — production stack
 # Domain: lms.iyazbrhm.cloud
-# Route Dokploy domain → service "frontend", port 8080
+# Host port 8090 → container nginx 8080 (Cloudflare Tunnel / local access)
 
 x-custom-image: &custom_image
   image: ${IMAGE_NAME:-ghcr.io/frappe/lms}:${VERSION:-v2.52.0}
@@ -48,9 +48,9 @@ services:
       - sites:/home/frappe/frappe-bench/sites
     networks:
       - bench-network
-    # Dokploy Traefik routes to this port — do not publish to host
-    expose:
-      - "8080"
+    # Publish host :8090 → nginx :8080 for Cloudflare Tunnel
+    ports:
+      - "${HTTP_PUBLISH_PORT:-8090}:8080"
     healthcheck:
       test: ["CMD", "wait-for-it", "0.0.0.0:8080"]
       interval: 5s

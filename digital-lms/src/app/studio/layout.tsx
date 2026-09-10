@@ -1,18 +1,18 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { isStaff } from "@/lib/constants";
-import { StudioNav } from "@/components/layout/studio-nav";
+import { StudioShell } from "@/components/layout/studio-shell";
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
+  const h = await headers();
+  const path = h.get("x-pathname") || h.get("x-url") || "/studio";
+  const nextPath = path.startsWith("/studio") ? path : "/studio";
+
   if (!session || !isStaff(session.roles)) {
-    redirect("/login");
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
-  return (
-    <div className="-mt-0 flex min-h-[calc(100vh-8rem)] border-t border-blue-100 bg-slate-50">
-      <StudioNav />
-      <div className="flex-1 overflow-auto p-6 bg-white">{children}</div>
-    </div>
-  );
+  return <StudioShell userName={session.name}>{children}</StudioShell>;
 }

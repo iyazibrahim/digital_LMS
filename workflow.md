@@ -58,3 +58,13 @@
 - Root cause of 500: `DataCloneError` — Mongoose `roles` array passed into jose/`NextResponse.json`. Fixed with plain `Array.from` + string ids.
 - App now listens on **8090** (Dockerfile `PORT=8090`) so Dokploy domain + Cloudflare Tunnel stay on 8090; avoid conflict with Dokploy’s own 3000.
 - Mongo logs show healthy; auth was the app bug.
+
+### 2026-09-10 — Studio CMS complete
+
+- Fixed Studio re-login (`?next=` + secure cookies from `NEXT_PUBLIC_APP_URL`).
+- Dedicated Studio shell (aligned brand/sidebar, mobile drawer); marketing chrome hidden on `/studio`.
+- Course builder: outline CMS + TipTap + YouTube/PDF + quiz/assignment/exercise links.
+- SCORM: drag-drop upload, unzip via `adm-zip`, imsmanifest launch path (`/api/scorm/packages`).
+- Studio CRUD: edit/delete for assignments, exercises, quizzes, batches, programs, jobs; user activate/deactivate.
+- Removed Frappe marketing copy; LMS product wording on home + README.
+

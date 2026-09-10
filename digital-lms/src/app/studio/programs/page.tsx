@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Program } from "@/models/Program";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/card";
+import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function StudioProgramsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl text-blue-950">Programs</h1>
           <p className="text-stone-600">Multi-course learning paths.</p>
@@ -21,13 +22,14 @@ export default async function StudioProgramsPage() {
           <Button>New program</Button>
         </Link>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Courses</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -40,11 +42,24 @@ export default async function StudioProgramsPage() {
                     {p.published ? "Published" : "Draft"}
                   </Badge>
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/studio/programs/${p._id}`}>
+                      <Button size="sm" variant="outline">
+                        Edit
+                      </Button>
+                    </Link>
+                    <DeleteResourceButton
+                      endpoint={`/api/programs/${p._id}`}
+                      confirmMessage="Delete this program?"
+                    />
+                  </div>
+                </td>
               </tr>
             ))}
             {!programs.length && (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-stone-500">
+                <td colSpan={4} className="px-4 py-8 text-center text-stone-500">
                   No programs yet.
                 </td>
               </tr>

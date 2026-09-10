@@ -63,7 +63,9 @@ export default function StudioCertificatesPage() {
     <div className="space-y-8">
       <div>
         <h1 className="font-serif text-3xl text-blue-950">Certificates</h1>
-        <p className="text-stone-600">Issued certificates and manual issuance.</p>
+        <p className="text-stone-600">
+          View issued certificates or issue one manually to a learner for a course.
+        </p>
       </div>
 
       <Card>

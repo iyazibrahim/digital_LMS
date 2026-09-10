@@ -4,6 +4,7 @@ import { Batch } from "@/models/Batch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
+import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function StudioBatchesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl text-blue-950">Batches</h1>
           <p className="text-stone-600">Live cohorts, announcements, and enrollments.</p>
@@ -22,15 +23,15 @@ export default async function StudioBatchesPage() {
           <Button>New batch</Button>
         </Link>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Seats</th>
               <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -48,10 +49,18 @@ export default async function StudioBatchesPage() {
                 <td className="px-4 py-3 text-stone-500">
                   {formatDate(b.startDate)} – {formatDate(b.endDate)}
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/studio/batches/${b._id}`} className="text-blue-700 hover:underline">
-                    Manage
-                  </Link>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/studio/batches/${b._id}`}>
+                      <Button size="sm" variant="outline">
+                        Manage
+                      </Button>
+                    </Link>
+                    <DeleteResourceButton
+                      endpoint={`/api/batches/${b._id}`}
+                      confirmMessage="Delete this batch?"
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

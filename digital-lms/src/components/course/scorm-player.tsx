@@ -45,9 +45,14 @@ export function ScormPlayer({
       <CardContent className="space-y-3">
         <iframe
           src={launchPath}
-          className="h-[480px] w-full rounded-xl border border-stone-200"
+          className="h-[min(70vh,640px)] w-full rounded-xl border border-stone-200 bg-white"
           title="SCORM package"
+          allow="fullscreen"
         />
+        <p className="text-xs text-stone-500">
+          If the package does not report completion automatically, use the button below when you
+          finish.
+        </p>
         <Button onClick={saveProgress} variant="secondary">
           {saved ? "Progress saved" : "Mark SCORM complete"}
         </Button>

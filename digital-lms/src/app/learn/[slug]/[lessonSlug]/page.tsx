@@ -16,6 +16,7 @@ import { AssignmentSubmit } from "@/components/course/assignment-submit";
 import { DiscussionPanel } from "@/components/course/discussion-panel";
 import { ExercisePlayer } from "@/components/course/exercise-player";
 import { ScormPlayer } from "@/components/course/scorm-player";
+import { VideoEmbed } from "@/components/course/video-embed";
 import type { Types } from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -233,26 +234,3 @@ export default async function LessonPlayerPage({
   );
 }
 
-function VideoEmbed({ url }: { url: string }) {
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-  if (yt) {
-    return (
-      <div className="aspect-video overflow-hidden rounded-xl">
-        <iframe
-          className="h-full w-full"
-          src={`https://www.youtube.com/embed/${yt[1]}`}
-          allowFullScreen
-          title="Lesson video"
-        />
-      </div>
-    );
-  }
-  if (url.match(/\.(mp4|webm)$/i)) {
-    return <video src={url} controls className="w-full rounded-xl" />;
-  }
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
-      Open video
-    </a>
-  );
-}

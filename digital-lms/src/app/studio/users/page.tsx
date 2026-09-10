@@ -51,7 +51,28 @@ export default function StudioUsersPage() {
       setError(data.error || "Only admins can change roles");
       return;
     }
-    setMessage(`Updated ${data.user.name}`);
+    setMessage(`Updated ${data.name || user.name}`);
+    load();
+  }
+
+  async function toggleActive(user: UserRow) {
+    setError("");
+    setMessage("");
+    const res = await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user._id,
+        roles: user.roles,
+        isActive: !user.isActive,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Only admins can deactivate users");
+      return;
+    }
+    setMessage(`${data.name || user.name} is now ${!user.isActive ? "active" : "inactive"}`);
     load();
   }
 
@@ -59,7 +80,7 @@ export default function StudioUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-serif text-3xl text-blue-950">Users</h1>
-        <p className="text-stone-600">Search learners and change roles (admin).</p>
+        <p className="text-stone-600">Search learners, change roles, and activate/deactivate accounts.</p>
       </div>
       <form
         className="flex gap-2"
@@ -81,12 +102,13 @@ export default function StudioUsersPage() {
       {message && <p className="text-sm text-blue-800">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">User</th>
               <th className="px-4 py-3 font-medium">Roles</th>
+              <th className="px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -109,6 +131,16 @@ export default function StudioUsersPage() {
                       </label>
                     ))}
                   </div>
+                </td>
+                <td className="px-4 py-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => toggleActive(u)}
+                  >
+                    {u.isActive ? "Deactivate" : "Activate"}
+                  </Button>
                 </td>
               </tr>
             ))}

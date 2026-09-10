@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
-import { SiteFooter, SiteHeader } from "@/components/layout/site-header";
+import { AppShell } from "@/components/layout/app-shell";
 
 const display = Fraunces({
   variable: "--font-display",
@@ -16,16 +16,14 @@ const body = Source_Sans_3({
 export const metadata: Metadata = {
   title: "Digital Penang LMS",
   description:
-    "One-stop learning platform — courses, batches, assessments, live sessions, certificates, and jobs.",
+    "Digital Penang learning platform — courses, live batches, quizzes, certificates, and careers.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} h-full`}>
-      <body className="min-h-full flex flex-col antialiased">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+      <body className="flex min-h-full flex-col antialiased">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { ProgrammingExercise } from "@/models/ProgrammingExercise";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function StudioExercisesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-3xl text-blue-950">Programming exercises</h1>
           <p className="text-stone-600">Code challenges with test cases.</p>
@@ -21,14 +22,15 @@ export default async function StudioExercisesPage() {
           <Button>New exercise</Button>
         </Link>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Language</th>
               <th className="px-4 py-3 font-medium">Tests</th>
               <th className="px-4 py-3 font-medium">Created</th>
+              <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -38,11 +40,24 @@ export default async function StudioExercisesPage() {
                 <td className="px-4 py-3">{ex.language}</td>
                 <td className="px-4 py-3">{ex.testCases?.length || 0}</td>
                 <td className="px-4 py-3 text-stone-500">{formatDate(ex.createdAt)}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/studio/exercises/${ex._id}`}>
+                      <Button size="sm" variant="outline">
+                        Edit
+                      </Button>
+                    </Link>
+                    <DeleteResourceButton
+                      endpoint={`/api/exercises/${ex._id}`}
+                      confirmMessage="Delete this exercise?"
+                    />
+                  </div>
+                </td>
               </tr>
             ))}
             {!exercises.length && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-stone-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-stone-500">
                   No exercises yet.
                 </td>
               </tr>

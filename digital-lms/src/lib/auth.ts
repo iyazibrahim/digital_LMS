@@ -92,26 +92,38 @@ export async function verifyRefreshToken(token: string): Promise<AuthPayload | n
   }
 }
 
+function cookieSecure() {
+  if (process.env.COOKIE_SECURE === "1") return true;
+  if (process.env.COOKIE_SECURE === "0") return false;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  return appUrl.startsWith("https://");
+}
+
+function cookieBase() {
+  return {
+    httpOnly: true,
+    secure: cookieSecure(),
+    sameSite: "lax" as const,
+    path: "/",
+  };
+}
+
 export function setAuthCookies(res: NextResponse, access: string, refresh: string) {
-  res.cookies.set(ACCESS_COOKIE, access, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: ACCESS_MAX_AGE,
-  });
-  res.cookies.set(REFRESH_COOKIE, refresh, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: REFRESH_MAX_AGE,
-  });
+  const base = cookieBase();
+  res.cookies.set(ACCESS_COOKIE, access, { ...base, maxAge: ACCESS_MAX_AGE });
+  res.cookies.set(REFRESH_COOKIE, refresh, { ...base, maxAge: REFRESH_MAX_AGE });
 }
 
 export function clearAuthCookies(res: NextResponse) {
-  res.cookies.set(ACCESS_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
-  res.cookies.set(REFRESH_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+  const base = cookieBase();
+  res.cookies.set(ACCESS_COOKIE, "", { ...base, maxAge: 0 });
+  res.cookies.set(REFRESH_COOKIE, "", { ...base, maxAge: 0 });
+}
+
+/** Safe relative redirect path from ?next= */
+export function safeNextPath(next: string | null | undefined, fallback = "/") {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
+  return next;
 }
 
 export async function getSession(): Promise<AuthPayload | null> {

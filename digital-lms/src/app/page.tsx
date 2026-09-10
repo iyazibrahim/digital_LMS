@@ -47,11 +47,11 @@ export default function HomePage() {
               Digital Penang
             </p>
             <h1 className="font-serif text-4xl leading-tight text-stone-900 md:text-5xl">
-              A lighter learning platform with every Frappe Learning capability that matters.
+              Learn, teach, and grow on Digital Penang LMS.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-stone-600">
-              Courses, live batches, quizzes, SCORM, certificates, and a job board — without the
-              heavy Frappe Framework stack.
+              Courses, live batches, quizzes, SCORM packages, certificates, and a job board — in one
+              modern learning platform.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/courses">

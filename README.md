@@ -1,22 +1,23 @@
 # Digital Penang LMS
 
-Clean-room, lighter clone of **Frappe Learning** for **https://lms.iyazbrhm.cloud**.
+Modern learning platform for **https://lms.iyazbrhm.cloud**.
 
-Stack: **Next.js (App Router) + TypeScript + Tailwind + MongoDB + JWT** — no Frappe Framework, MariaDB, Redis, or bench.
+Stack: **Next.js (App Router) + TypeScript + Tailwind + MongoDB + JWT**.
 
 ## Features
 
-- Courses → chapters → lessons (video, PDF, rich text)
+- Courses → chapters → lessons (text, YouTube/video, PDF)
 - Quizzes (single / multi / open) + proctoring violations
 - Assignments with file upload + grading
 - Programming exercises
-- SCORM chapters
+- SCORM package upload (unzip + launch)
 - Live batches, timetable, announcements, Zoom/Meet live classes
 - Certificates (auto on completion)
 - Programs, discussions, analytics
 - Job board + applications
 - Stripe checkout (optional) + coupons
 - Evaluator slot booking
+- Studio CMS for instructors and admins
 
 ## Local development
 
@@ -73,21 +74,9 @@ SEED_ADMIN_EMAIL=admin@digitalpenang.my
 SEED_ADMIN_PASSWORD=admin123
 SEED_RESET_ADMIN_PASSWORD=1
 SHOW_ERROR_DETAILS=1
+NEXT_PUBLIC_APP_URL=https://lms.iyazbrhm.cloud
 ```
 
 After a successful login, set `SEED_RESET_ADMIN_PASSWORD=0`.
 
 Health check: `https://lms.iyazbrhm.cloud/api/health`
-
-## Project layout
-
-| Path | Role |
-|------|------|
-| `digital-lms/` | Next.js application |
-| `docker-compose.yml` | `app` + `mongo` |
-| `workflow.md` | Project status log |
-
-## Notes
-
-- Behavior-compatible with Frappe LMS; not a source copy (AGPL).
-- Do not commit real `.env` secrets.

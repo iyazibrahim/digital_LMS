@@ -32,6 +32,9 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
       }
       if (data.accessToken && data.refreshToken) {
         persistAuthTokens(data.accessToken, data.refreshToken);
+        // #region agent log
+        fetch('http://127.0.0.1:7694/ingest/5a6a4c95-e3c7-440d-8a72-c416ea345cfb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'900175'},body:JSON.stringify({sessionId:'900175',runId:'pre-fix',hypothesisId:'LOGIN',location:'login-form.tsx:persist',message:'login persisted tokens',data:{hasAccess:true,next:defaultNext||'/'},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
       }
       // Hard navigation so RSC picks up cookies / tokens
       window.location.href = defaultNext || "/";
@@ -77,20 +80,6 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
-
-          {/* Fallback: classic form POST (best cookie reliability through Cloudflare) */}
-          <form
-            method="POST"
-            action={`/api/auth/login`}
-            className="mt-3"
-          >
-            <input type="hidden" name="email" value={email} />
-            <input type="hidden" name="password" value={password} />
-            <input type="hidden" name="next" value={defaultNext || "/studio"} />
-            <Button type="submit" variant="outline" className="w-full" disabled={!email || !password}>
-              Sign in (backup method)
             </Button>
           </form>
 

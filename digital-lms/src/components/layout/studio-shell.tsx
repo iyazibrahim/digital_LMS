@@ -104,11 +104,23 @@ export function StudioShell({
           <span className="hidden max-w-[10rem] truncate text-sm text-stone-600 sm:inline">
             {userName}
           </span>
-          <Link href="/api/auth/logout" onClick={() => clearAuthTokens()}>
+          <a
+            href="/api/auth/logout"
+            onClick={(e) => {
+              e.preventDefault();
+              // #region agent log
+              const log = {sessionId:'900175',runId:'post-fix',hypothesisId:'A',location:'studio-shell.tsx:logout',message:'studio logout hard nav',data:{hadToken:!!getAccessToken()},timestamp:Date.now()};
+              fetch('/api/debug-ingest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(log)}).catch(()=>{});
+              fetch('http://127.0.0.1:7694/ingest/5a6a4c95-e3c7-440d-8a72-c416ea345cfb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'900175'},body:JSON.stringify(log)}).catch(()=>{});
+              // #endregion
+              clearAuthTokens();
+              window.location.assign("/api/auth/logout");
+            }}
+          >
             <Button variant="outline" size="sm">
               Log out
             </Button>
-          </Link>
+          </a>
         </div>
       </header>
 
@@ -130,13 +142,17 @@ export function StudioShell({
                 View site
               </Link>
               <span className="text-stone-300">·</span>
-              <Link
+              <a
                 href="/api/auth/logout"
                 className="text-xs text-stone-500 hover:underline"
-                onClick={() => clearAuthTokens()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearAuthTokens();
+                  window.location.assign("/api/auth/logout");
+                }}
               >
                 Log out
-              </Link>
+              </a>
             </div>
           </div>
         </aside>

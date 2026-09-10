@@ -1,57 +1,41 @@
 # Digital Penang LMS
 
-Production Docker Compose stack for **Frappe Learning (LMS)** — free & open source — branded as Digital Penang LMS. Served at **https://lms.iyazbrhm.cloud** via **Cloudflare Tunnel** to host port **8090**.
+Official **Frappe Learning** Docker install, wrapped for **https://lms.iyazbrhm.cloud** via Cloudflare Tunnel on port **8090**.
 
-Uses image **`amirul123/lms-custom:latest`** (hardcoded in compose — includes `frappe` + **`payments`** + **`lms`**). The official `ghcr.io/frappe/lms` image fails Learning install because `payments` is missing.
+This follows the upstream setup from [frappe/lms docker](https://github.com/frappe/lms/tree/develop/docker) and the README install order:
 
-## Quick links after deploy
+1. `bench get-app payments`
+2. `bench get-app lms`
+3. `bench new-site …`
+4. `bench --site … install-app payments`
+5. `bench --site … install-app lms`
+
+(Not the broken `ghcr.io/frappe/lms` production image path.)
+
+## URLs
 
 | Surface | URL |
 |--------|-----|
-| Learning portal | https://lms.iyazbrhm.cloud/lms |
-| Frappe desk | https://lms.iyazbrhm.cloud/app |
-| Direct (server) | http://127.0.0.1:8090/lms |
+| Learning | https://lms.iyazbrhm.cloud/lms |
+| Desk | https://lms.iyazbrhm.cloud/app |
+| Direct | http://127.0.0.1:8090/lms |
 
-**Login:** `Administrator` / value of `ADMIN_PASSWORD`
+**Login:** `Administrator` / `ADMIN_PASSWORD` from `.env`
 
-## Repository layout
-
-| File | Purpose |
-|------|---------|
-| `docker-compose.yml` | Full production stack |
-| `.env.example` | Environment template |
-| `workflow.md` | Project status log |
-
-## Fresh deploy (your error = wrong image still running)
-
-`ModuleNotFoundError: No module named 'payments'` with `frappe 15.104.0` and apps `frappe` + `lms` means the server is still using **`ghcr.io/frappe/lms`**, not `amirul123/lms-custom`.
-
-1. In Dokploy **Environment**, **delete** `IMAGE_NAME` and `VERSION` if present.
-2. On the server:
+## Deploy
 
 ```bash
-git pull
-docker compose down -v
-docker compose pull
-docker images | grep -E 'lms-custom|frappe/lms'
-# must show amirul123/lms-custom — NOT only ghcr.io/frappe/lms
+cp .env.example .env
+# set strong ADMIN_PASSWORD and DB_ROOT_PASSWORD
+
+docker compose down -v   # wipe old failed installs
 docker compose up -d
-docker compose logs -f create-site
+docker compose logs -f frappe
 ```
 
-`create-site` now **aborts early** if `apps/payments` is missing, so you cannot get a silent Frappe-only site again.
+First boot takes a long time (`bench init`, `get-app`, site create). Wait until you see apps listed and `bench start`.
 
-Expect image apps: `frappe`, `lms`, `payments` (Frappe 16.x on the custom image).
-
-`down -v` deletes old MariaDB/site data.
-
-## Cloudflare Tunnel
-
-Point hostname `lms.iyazbrhm.cloud` to:
-
-```text
-http://localhost:8090
-```
+### Cloudflare Tunnel
 
 ```yaml
 ingress:
@@ -60,24 +44,16 @@ ingress:
   - service: http_status:404
 ```
 
-## Without wiping (optional recovery)
+## Files
 
-If the new image is running and apps are present in the container:
-
-```bash
-docker compose exec backend bench --site lms.iyazbrhm.cloud list-apps
-docker compose exec backend bench --site lms.iyazbrhm.cloud install-app payments
-docker compose exec backend bench --site lms.iyazbrhm.cloud install-app lms
-```
-
-Prefer a clean `down -v` + `up` if the old site was created without Learning.
+| File | Role |
+|------|------|
+| `docker-compose.yml` | Official stack: MariaDB + Redis + `frappe/bench` |
+| `init.sh` | Official init, site = `lms.iyazbrhm.cloud` |
+| `.env.example` | Passwords + port 8090 |
 
 ## Notes
 
-- Frappe Learning is **free**. The `payments` app is also free open source (needed for LMS install / paid-course features).
-- Nginx inside the container listens on **8080**; host mapping is **8090** (`HTTP_PUBLISH_PORT`).
-- Do not commit a real `.env` file.
-
-## License / upstream
-
-Based on [Frappe Learning](https://github.com/frappe/lms). Community image: [amirul123/lms-custom](https://hub.docker.com/r/amirul123/lms-custom).
+- Frappe Learning is free/open source. `payments` is also free (required dependency).
+- Persist bench in volume `frappe-home` so restarts do not re-init from scratch.
+- Do not commit a real `.env`.

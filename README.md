@@ -1,59 +1,66 @@
 # Digital Penang LMS
 
-Official **Frappe Learning** Docker install, wrapped for **https://lms.iyazbrhm.cloud** via Cloudflare Tunnel on port **8090**.
+Clean-room, lighter clone of **Frappe Learning** for **https://lms.iyazbrhm.cloud**.
 
-This follows the upstream setup from [frappe/lms docker](https://github.com/frappe/lms/tree/develop/docker) and the README install order:
+Stack: **Next.js (App Router) + TypeScript + Tailwind + MongoDB + JWT** — no Frappe Framework, MariaDB, Redis, or bench.
 
-1. `bench get-app payments`
-2. `bench get-app lms`
-3. `bench new-site …`
-4. `bench --site … install-app payments`
-5. `bench --site … install-app lms`
+## Features
 
-(Not the broken `ghcr.io/frappe/lms` production image path.)
+- Courses → chapters → lessons (video, PDF, rich text)
+- Quizzes (single / multi / open) + proctoring violations
+- Assignments with file upload + grading
+- Programming exercises
+- SCORM chapters
+- Live batches, timetable, announcements, Zoom/Meet live classes
+- Certificates (auto on completion)
+- Programs, discussions, analytics
+- Job board + applications
+- Stripe checkout (optional) + coupons
+- Evaluator slot booking
 
-## URLs
+## Local development
 
-| Surface | URL |
-|--------|-----|
-| Learning | https://lms.iyazbrhm.cloud/lms |
-| Desk | https://lms.iyazbrhm.cloud/app |
-| Direct | http://127.0.0.1:8090/lms |
+```bash
+# start MongoDB (Docker)
+docker compose up -d mongo
 
-**Login:** `Administrator` / `ADMIN_PASSWORD` from `.env`
+cd digital-lms
+cp .env.example .env.local
+npm install
+npm run seed
+npm run dev
+```
 
-## Deploy
+Open http://localhost:3000
+
+### Seed accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@digitalpenang.my | admin123 |
+| Instructor | instructor@digitalpenang.my | instructor123 |
+| Student | student@digitalpenang.my | student123 |
+
+## Production (Docker)
+
+From repo root:
 
 ```bash
 cp .env.example .env
-# set strong ADMIN_PASSWORD and DB_ROOT_PASSWORD
-
-docker compose down -v   # wipe old failed installs
-docker compose up -d
-docker compose logs -f frappe
+docker compose up -d --build
 ```
 
-First boot takes a long time (`bench init`, `get-app`, site create). Wait until you see apps listed and `bench start`.
+App publishes on **8090** for Cloudflare Tunnel → `lms.iyazbrhm.cloud`.
 
-### Cloudflare Tunnel
+## Project layout
 
-```yaml
-ingress:
-  - hostname: lms.iyazbrhm.cloud
-    service: http://localhost:8090
-  - service: http_status:404
-```
-
-## Files
-
-| File | Role |
+| Path | Role |
 |------|------|
-| `docker-compose.yml` | Official stack: MariaDB + Redis + `frappe/bench` |
-| `init.sh` | Official init, site = `lms.iyazbrhm.cloud` |
-| `.env.example` | Passwords + port 8090 |
+| `digital-lms/` | Next.js application |
+| `docker-compose.yml` | `app` + `mongo` |
+| `workflow.md` | Project status log |
 
 ## Notes
 
-- Frappe Learning is free/open source. `payments` is also free (required dependency).
-- Persist bench in volume `frappe-home` so restarts do not re-init from scratch.
-- Do not commit a real `.env`.
+- Behavior-compatible with Frappe LMS; not a source copy (AGPL).
+- Do not commit real `.env` secrets.

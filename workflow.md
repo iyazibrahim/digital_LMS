@@ -4,27 +4,40 @@
 
 - **Name:** Digital Penang LMS
 - **Domain:** `lms.iyazbrhm.cloud`
-- **Deploy:** Official Frappe LMS Docker (`frappe/bench` + `init.sh`) + Cloudflare Tunnel `:8090`
+- **Stack:** Next.js App Router + TypeScript + Tailwind + MongoDB + JWT (lighter Frappe Learning clone)
+- **Deploy:** Docker Compose (`app` + `mongo`) + Cloudflare Tunnel `:8090`
 - **Git remote:** https://github.com/iyazibrahim/digital_LMS.git
 
 ## Decisions
 
-- Follow official LMS Docker/README install: `get-app payments` → `get-app lms` → install both on site.
-- Do **not** use broken `ghcr.io/frappe/lms` / community production image path that failed with missing `payments`.
-- Publish host `8090→8000` for Cloudflare Tunnel.
-- Persist `/home/frappe` in volume `frappe-home`.
+- Abandoned heavy Frappe/bench/MariaDB/Redis stack in favor of a clean-room Next.js rebuild.
+- Functional parity with Frappe Learning pillars: courses, content types (incl. SCORM), batches/live, certificates, job board + extras (programs, discussions, analytics, Stripe, exercises, proctoring, evaluations).
+- Roles: `admin`, `instructor`, `evaluator`, `student`.
+- JWT in httpOnly cookies.
 
 ## Completed
 
-### 2026-09-10 — Switch to official LMS docker wrap
+### 2026-09-10 — Switch to official LMS docker wrap (superseded)
 
-- Replaced custom production compose with official `frappe/bench` + MariaDB + Redis.
-- `init.sh` based on upstream `docker/init.sh`, site `lms.iyazbrhm.cloud`.
-- Docs updated for wipe + tunnel.
+- Earlier Frappe Docker wrap replaced by Next.js rewrite.
+
+### 2026-09-10 — Next.js LMS foundation + full feature modules
+
+- Scaffolded `digital-lms/` Next.js app with Mongo models and JWT auth.
+- Implemented courses/chapters/lessons, quizzes, assignments, batches/live, certificates, jobs, programs, discussions, SCORM progress, analytics, Stripe checkout hooks, programming exercises, quiz proctoring logs, evaluator slots.
+- Replaced root `docker-compose.yml` with `app` + `mongo`.
+- Seed script + README/workflow updated.
+
+### 2026-09-10 — Studio staff console + public learner pages
+
+- Added `/studio` layout (staff gate + `StudioNav`) and pages: overview, courses (CRUD + chapters/lessons/SCORM), quizzes, assignments, exercises, batches, certificates, programs, jobs/applications, users, analytics (recharts), evaluations, settings.
+- Supporting APIs: analytics, uploads (SCORM zip), exercises, programs, jobs apply/applications, users, settings, evaluations, certificates/issue, profile, batch enrollments.
+- Public pages: programs, jobs (+ apply), printable certificates, profile (enrollments/certificates). Batches pages already present.
+- Build: `npm run build` passed.
 
 ## Next steps
 
-1. Server: `git pull`, update `.env`, `docker compose down -v && docker compose up -d`.
-2. Wait for first `bench init` / install (can take 15–30+ minutes).
-3. Confirm https://lms.iyazbrhm.cloud/lms
-4. Rebrand title/logo to Digital Penang LMS.
+1. `docker compose up -d mongo` (or full stack) and `npm run seed` locally.
+2. Confirm http://localhost:3000 and Studio at `/studio`.
+3. Point Cloudflare Tunnel at host `:8090` when deploying compose `app`.
+4. Add Stripe/Zoom credentials in Studio → Settings for paid courses and Zoom meetings.

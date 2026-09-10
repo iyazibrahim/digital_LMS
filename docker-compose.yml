@@ -1,63 +1,49 @@
-# Digital Penang LMS
-# Official Frappe Learning Docker setup (from frappe/lms docker/), wrapped for:
-#   site: lms.iyazbrhm.cloud
-#   Cloudflare Tunnel → http://localhost:8090
-#
-# Upstream: https://github.com/frappe/lms/tree/develop/docker
-# Official install steps inside init.sh:
-#   bench get-app payments && bench get-app lms
-#   bench new-site ... && install-app payments && install-app lms
+# Digital Penang LMS — lighter Frappe Learning clone
+# Services: Next.js app + MongoDB
+# Cloudflare Tunnel → http://localhost:8090
 
 name: digital-penang-lms
 
 services:
-  mariadb:
-    image: mariadb:10.8
+  mongo:
+    image: mongo:7
     restart: unless-stopped
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --skip-character-set-client-handshake
-      - --skip-innodb-read-only-compressed
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-123}
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD:-123}"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 20
-      start_period: 20s
 
-  redis:
-    image: redis:alpine
+  app:
+    build:
+      context: ./digital-lms
+      dockerfile: Dockerfile
     restart: unless-stopped
-
-  frappe:
-    image: frappe/bench:latest
-    restart: unless-stopped
-    command: bash /workspace/init.sh
     environment:
-      SHELL: /bin/bash
-      SITE_NAME: ${SITE_NAME:-lms.iyazbrhm.cloud}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
-      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-123}
-      DEVELOPER_MODE: ${DEVELOPER_MODE:-0}
-    working_dir: /home/frappe
-    volumes:
-      - .:/workspace
-      - frappe-home:/home/frappe
+      MONGODB_URI: mongodb://mongo:27017/digital-lms
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://lms.iyazbrhm.cloud}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@digitalpenang.my}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin123}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+      ZOOM_ACCOUNT_ID: ${ZOOM_ACCOUNT_ID:-}
+      ZOOM_CLIENT_ID: ${ZOOM_CLIENT_ID:-}
+      ZOOM_CLIENT_SECRET: ${ZOOM_CLIENT_SECRET:-}
     ports:
-      # Cloudflare Tunnel should target http://localhost:8090
-      - "${HTTP_PUBLISH_PORT:-8090}:8000"
-      - "${SOCKETIO_PUBLISH_PORT:-9000}:9000"
+      - "${HTTP_PUBLISH_PORT:-8090}:3000"
+    volumes:
+      - uploads:/app/public/uploads
     depends_on:
-      mariadb:
+      mongo:
         condition: service_healthy
-      redis:
-        condition: service_started
 
 volumes:
-  mariadb-data:
-  frappe-home:
+  mongo-data:
+  uploads:

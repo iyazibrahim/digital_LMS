@@ -1,7 +1,16 @@
 .env
+.env.local
 *.env
 !.env.example
 .DS_Store
 Thumbs.db
 *.log
 sites/
+node_modules/
+.next/
+digital-lms/node_modules/
+digital-lms/.next/
+digital-lms/public/uploads/*
+!digital-lms/public/uploads/.gitkeep
+
+digital-lms/.memory-mongo-uri

@@ -32,16 +32,22 @@ export async function POST(req: NextRequest) {
       roles: ["student"] as Role[],
     });
 
+    const roles = Array.from(user.roles || ["student"]).map(String) as Role[];
     const payload = {
       sub: String(user._id),
-      email: user.email,
-      name: user.name,
-      roles: user.roles as Role[],
+      email: String(user.email),
+      name: String(user.name),
+      roles,
     };
     const access = await signAccessToken(payload);
     const refresh = await signRefreshToken(payload);
     const res = NextResponse.json({
-      user: { id: user._id, name: user.name, email: user.email, roles: user.roles },
+      user: {
+        id: String(user._id),
+        name: String(user.name),
+        email: String(user.email),
+        roles,
+      },
     });
     setAuthCookies(res, access, refresh);
     return res;

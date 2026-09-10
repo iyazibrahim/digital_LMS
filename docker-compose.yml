@@ -1,6 +1,5 @@
-# Digital Penang LMS — lighter Frappe Learning clone
-# Dokploy: set domain port to 3000 (container port), not 8090
-# Optional host publish 8090 for Cloudflare Tunnel / direct access
+# Digital Penang LMS
+# App listens on 8090 (Cloudflare Tunnel + Dokploy). Avoid 3000 — Dokploy often uses it.
 
 name: digital-penang-lms
 
@@ -10,7 +9,6 @@ services:
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
-    # Do not publish 27017 publicly in production if possible
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
@@ -25,6 +23,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      PORT: "8090"
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/digital-lms}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh}
@@ -45,10 +44,9 @@ services:
       ZOOM_CLIENT_ID: ${ZOOM_CLIENT_ID:-}
       ZOOM_CLIENT_SECRET: ${ZOOM_CLIENT_SECRET:-}
     expose:
-      - "3000"
+      - "8090"
     ports:
-      # Host 8090 for tunnel; Dokploy domain must target container port 3000
-      - "${HTTP_PUBLISH_PORT:-8090}:3000"
+      - "${HTTP_PUBLISH_PORT:-8090}:8090"
     volumes:
       - uploads:/app/public/uploads
     depends_on:
@@ -60,7 +58,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:8090/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 15s
       timeout: 5s

@@ -36,19 +36,29 @@ export async function verifyPassword(password: string, hash: string) {
   }
 }
 
+/** Plain JSON-safe claims — Mongoose arrays / ObjectIds cause DataCloneError in jose/Next. */
+function jwtClaims(payload: AuthPayload) {
+  return {
+    sub: String(payload.sub),
+    email: String(payload.email),
+    name: String(payload.name),
+    roles: Array.from(payload.roles || []).map(String),
+  };
+}
+
 export async function signAccessToken(payload: AuthPayload) {
-  return new SignJWT({ ...payload })
+  return new SignJWT(jwtClaims(payload))
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(payload.sub)
+    .setSubject(String(payload.sub))
     .setIssuedAt()
     .setExpirationTime("15m")
     .sign(accessSecret());
 }
 
 export async function signRefreshToken(payload: AuthPayload) {
-  return new SignJWT({ ...payload })
+  return new SignJWT(jwtClaims(payload))
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(payload.sub)
+    .setSubject(String(payload.sub))
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(refreshSecret());

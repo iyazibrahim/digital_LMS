@@ -32,7 +32,7 @@ export async function GET() {
         mongo: { uriConfigured: mongoUriSet, readyState: mongoose.connection.readyState },
         error: err instanceof Error ? err.message : "health check failed",
         dokploy:
-          "Domain port must be 3000 (Next.js inside the container). MONGODB_URI should be mongodb://mongo:27017/digital-lms",
+          "App listens on 8090. Set Dokploy domain port to 8090. MONGODB_URI=mongodb://mongo:27017/digital-lms",
       },
       { status: 503 }
     );

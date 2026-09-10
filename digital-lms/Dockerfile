@@ -25,7 +25,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 RUN mkdir -p public/uploads && chown -R nextjs:nodejs /app
 USER nextjs
-EXPOSE 3000
-ENV PORT=3000
+# 8090 matches Cloudflare Tunnel + Dokploy domain (Dokploy UI often uses 3000)
+EXPOSE 8090
+ENV PORT=8090
 ENV HOSTNAME=0.0.0.0
 CMD ["node", "server.js"]

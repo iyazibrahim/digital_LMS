@@ -53,17 +53,17 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-App container listens on **3000**. Host publish is **8090** for tunnels.
+App listens on **8090** (same as Cloudflare Tunnel). Local `npm run dev` still uses **3000**.
 
-### Dokploy domain settings (important)
+### Dokploy domain settings
 
 | Field | Value |
 |--------|--------|
 | Domain | `lms.iyazbrhm.cloud` |
-| Port | **3000** (container port — not 8090) |
+| Port | **8090** |
 | Path | `/` |
 
-If Port is `8090`, Traefik talks to the wrong port inside the container.
+Do **not** use port 3000 for this app — Dokploy often uses 3000 itself.
 
 Environment must include:
 

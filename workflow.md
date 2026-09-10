@@ -51,8 +51,10 @@
 
 ### 2026-09-10 — Fix production login 500 (Dokploy)
 
-- Root cause likely: Dokploy domain Port set to **8090** (host map) instead of container **3000**.
-- Hardened `/api/auth/login` with clearer DB/seed errors + `SHOW_ERROR_DETAILS`.
-- Added `/api/health` for Mongo readiness + user count.
-- Compose: `expose: 3000`, healthcheck on `/api/health`, Dokploy notes in README.
-- Validation: `npm run build` passed.
+- Hardened `/api/auth/login` + `/api/health`.
+
+### 2026-09-10 — Real login 500 + port 8090
+
+- Root cause of 500: `DataCloneError` — Mongoose `roles` array passed into jose/`NextResponse.json`. Fixed with plain `Array.from` + string ids.
+- App now listens on **8090** (Dockerfile `PORT=8090`) so Dokploy domain + Cloudflare Tunnel stay on 8090; avoid conflict with Dokploy’s own 3000.
+- Mongo logs show healthy; auth was the app bug.

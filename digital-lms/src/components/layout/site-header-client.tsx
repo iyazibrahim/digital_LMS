@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +20,34 @@ export function SiteHeaderClient({
   staff?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState(sessionName);
+  const [isStaffUser, setIsStaffUser] = useState(!!staff);
+
+  // Keep header in sync with real cookies (fixes stale “logged in” UI)
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+      .then(async (r) => {
+        const data = await r.json();
+        if (cancelled) return;
+        if (r.ok && data.user) {
+          setName(data.user.name);
+          setIsStaffUser(!!data.user.isStaff);
+        } else {
+          setName(undefined);
+          setIsStaffUser(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setName(undefined);
+          setIsStaffUser(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur">
@@ -42,7 +70,7 @@ export function SiteHeaderClient({
                 {item.label}
               </Link>
             ))}
-            {staff && (
+            {isStaffUser && (
               <Link href="/studio" className="font-medium text-blue-800 hover:text-blue-950">
                 Studio
               </Link>
@@ -50,11 +78,11 @@ export function SiteHeaderClient({
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          {sessionName ? (
+          {name ? (
             <>
               <Link href="/profile" className="hidden sm:inline">
                 <Button variant="ghost" size="sm">
-                  {sessionName}
+                  {name}
                 </Button>
               </Link>
               <Link href="/api/auth/logout">
@@ -90,7 +118,7 @@ export function SiteHeaderClient({
                 {item.label}
               </Link>
             ))}
-            {staff && (
+            {isStaffUser && (
               <Link
                 href="/studio"
                 className="rounded-lg px-3 py-2.5 text-sm font-medium text-blue-800 hover:bg-blue-50"

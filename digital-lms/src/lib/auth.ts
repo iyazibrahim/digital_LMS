@@ -36,7 +36,6 @@ export async function verifyPassword(password: string, hash: string) {
   }
 }
 
-/** Plain JSON-safe claims — Mongoose arrays / ObjectIds cause DataCloneError in jose/Next. */
 function jwtClaims(payload: AuthPayload) {
   return {
     sub: String(payload.sub),
@@ -69,7 +68,10 @@ export function normalizeRoles(roles: unknown): Role[] {
     return roles.map(String).filter(Boolean) as Role[];
   }
   if (typeof roles === "string" && roles) {
-    return roles.split(",").map((r) => r.trim()).filter(Boolean) as Role[];
+    return roles
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean) as Role[];
   }
   return [];
 }
@@ -102,7 +104,7 @@ export async function verifyRefreshToken(token: string): Promise<AuthPayload | n
   }
 }
 
-/** Prefer explicit COOKIE_SECURE, then forwarded proto, then public app URL. */
+/** Prefer COOKIE_SECURE env; default secure in production behind HTTPS public URL. */
 export function cookieSecure(req?: NextRequest | null) {
   if (process.env.COOKIE_SECURE === "1") return true;
   if (process.env.COOKIE_SECURE === "0") return false;
@@ -110,7 +112,8 @@ export function cookieSecure(req?: NextRequest | null) {
   if (proto === "https") return true;
   if (proto === "http") return false;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-  return appUrl.startsWith("https://");
+  if (appUrl.startsWith("https://")) return true;
+  return process.env.NODE_ENV === "production";
 }
 
 export function setAuthCookies(
@@ -131,63 +134,76 @@ export function setAuthCookies(
   res.headers.set("Cache-Control", "no-store");
 }
 
-export function clearAuthCookies(res: NextResponse, req?: NextRequest | null) {
-  const secure = cookieSecure(req);
-  const base = {
-    httpOnly: true,
-    secure,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 0,
-  };
-  res.cookies.set(ACCESS_COOKIE, "", base);
-  res.cookies.set(REFRESH_COOKIE, "", base);
+/** Clear both secure and non-secure variants (avoids sticky mismatched cookies). */
+export function clearAuthCookies(res: NextResponse) {
+  for (const secure of [true, false]) {
+    const base = {
+      httpOnly: true,
+      secure,
+      sameSite: "lax" as const,
+      path: "/",
+      maxAge: 0,
+    };
+    res.cookies.set(ACCESS_COOKIE, "", base);
+    res.cookies.set(REFRESH_COOKIE, "", base);
+  }
   res.headers.set("Cache-Control", "no-store");
 }
 
-/** Safe relative redirect path from ?next= */
 export function safeNextPath(next: string | null | undefined, fallback = "/") {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
   return next;
 }
 
-export async function getSession(): Promise<AuthPayload | null> {
-  const jar = await cookies();
-  const access = jar.get(ACCESS_COOKIE)?.value;
-  let payload: AuthPayload | null = null;
-  if (access) {
-    payload = await verifyAccessToken(access);
-  }
-  if (!payload) {
-    const refresh = jar.get(REFRESH_COOKIE)?.value;
-    if (!refresh) return null;
-    payload = await verifyRefreshToken(refresh);
-  }
-  if (!payload) return null;
-
-  // Hydrate roles/name from DB when JWT claims are missing
-  if (!payload.roles.length || !payload.name) {
-    try {
-      const { connectDB } = await import("@/lib/db");
-      const { User } = await import("@/models/User");
-      await connectDB();
-      const user = await User.findById(payload.sub).select("roles name email isActive").lean();
-      if (!user || user.isActive === false) return null;
-      payload = {
-        sub: String(user._id),
-        email: String(user.email),
-        name: String(user.name),
-        roles: normalizeRoles(user.roles),
-      };
-    } catch (err) {
-      console.error("[getSession] hydrate failed", err);
+async function hydratePayload(payload: AuthPayload): Promise<AuthPayload> {
+  if (payload.roles.length && payload.name) return payload;
+  try {
+    const { connectDB } = await import("@/lib/db");
+    const { User } = await import("@/models/User");
+    await connectDB();
+    const user = await User.findById(payload.sub).select("roles name email isActive").lean();
+    if (!user) return payload;
+    if (user.isActive === false) {
+      return payload; // caller may still treat as logged-in; requireSession can check later
     }
+    return {
+      sub: String(user._id),
+      email: String(user.email),
+      name: String(user.name),
+      roles: normalizeRoles(user.roles),
+    };
+  } catch (err) {
+    console.error("[hydratePayload]", err);
+    return payload;
   }
-
-  return payload;
 }
 
-/** Re-sign cookies onto a response so session sticks after login / refresh. */
+export async function resolveSessionFromTokenPair(
+  access?: string,
+  refresh?: string
+): Promise<AuthPayload | null> {
+  let payload: AuthPayload | null = null;
+  if (access) payload = await verifyAccessToken(access);
+  if (!payload && refresh) payload = await verifyRefreshToken(refresh);
+  if (!payload) return null;
+  return hydratePayload(payload);
+}
+
+export async function getSession(): Promise<AuthPayload | null> {
+  const jar = await cookies();
+  return resolveSessionFromTokenPair(
+    jar.get(ACCESS_COOKIE)?.value,
+    jar.get(REFRESH_COOKIE)?.value
+  );
+}
+
+export async function getSessionFromRequest(req: NextRequest): Promise<AuthPayload | null> {
+  return resolveSessionFromTokenPair(
+    req.cookies.get(ACCESS_COOKIE)?.value,
+    req.cookies.get(REFRESH_COOKIE)?.value
+  );
+}
+
 export async function attachSessionCookies(
   res: NextResponse,
   payload: AuthPayload,
@@ -207,14 +223,6 @@ export async function requireSession(allowed?: Role[]) {
     throw new AuthError("Forbidden", 403);
   }
   return session;
-}
-
-export function getSessionFromRequest(req: NextRequest): Promise<AuthPayload | null> {
-  const access = req.cookies.get(ACCESS_COOKIE)?.value;
-  if (access) return verifyAccessToken(access);
-  const refresh = req.cookies.get(REFRESH_COOKIE)?.value;
-  if (refresh) return verifyRefreshToken(refresh);
-  return Promise.resolve(null);
 }
 
 export class AuthError extends Error {

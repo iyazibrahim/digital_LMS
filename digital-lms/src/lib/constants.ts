@@ -7,10 +7,10 @@ export const PRIVILEGED_ROLES: Role[] = ["admin", "instructor"];
 export const ACCESS_COOKIE = "dp_access";
 export const REFRESH_COOKIE = "dp_refresh";
 
-export const ACCESS_TTL = "15m";
-export const REFRESH_TTL = "7d";
-export const ACCESS_MAX_AGE = 60 * 15;
-export const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
+export const ACCESS_TTL = "7d";
+export const REFRESH_TTL = "30d";
+export const ACCESS_MAX_AGE = 60 * 60 * 24 * 7;
+export const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
 export function hasRole(userRoles: string[] | undefined, allowed: Role[]): boolean {
   if (!userRoles?.length) return false;

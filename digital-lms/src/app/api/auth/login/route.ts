@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         roles,
       },
     });
-    setAuthCookies(res, access, refresh);
+    setAuthCookies(res, access, refresh, req);
     return res;
   } catch (err) {
     if (err instanceof z.ZodError) {

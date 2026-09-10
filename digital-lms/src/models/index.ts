@@ -7,6 +7,8 @@ export { Batch, BatchEnrollment } from "./Batch";
 export {
   Certificate,
   CertificateTemplate,
+  Badge,
+  UserBadge,
   EvaluatorSlot,
   EvaluationRequest,
 } from "./Certificate";

@@ -38,14 +38,24 @@ export default function ManageBatchPage() {
   const [error, setError] = useState("");
 
   async function load() {
+    setError("");
     const [bRes, eRes] = await Promise.all([
-      fetch(`/api/batches/${id}`),
-      fetch(`/api/batches/${id}/enrollments`),
+      fetch(`/api/batches/${id}`, { credentials: "same-origin" }),
+      fetch(`/api/batches/${id}/enrollments`, { credentials: "same-origin" }),
     ]);
     const bData = await bRes.json();
     const eData = await eRes.json();
-    if (bRes.ok) setBatch(bData.batch);
+    if (bRes.ok) {
+      setBatch(bData.batch || bData);
+    } else {
+      setError(bData.error || "Failed to load batch");
+    }
     if (eRes.ok) setEnrollments(eData.enrollments || []);
+    else if (!bRes.ok) {
+      /* already set error */
+    } else if (eRes.status === 401 || eRes.status === 403) {
+      setError(eData.error || "Not authorized to view enrollments");
+    }
   }
 
   useEffect(() => {
@@ -58,6 +68,7 @@ export default function ManageBatchPage() {
     const res = await fetch(`/api/batches/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({
         title: batch.title,
         description: batch.description,
@@ -69,7 +80,7 @@ export default function ManageBatchPage() {
       setError(data.error || "Save failed");
       return;
     }
-    setBatch(data.batch);
+    setBatch(data.batch || data);
     setMessage("Batch saved.");
   }
 
@@ -85,7 +96,7 @@ export default function ManageBatchPage() {
       setError(data.error || "Failed");
       return;
     }
-    setBatch(data.batch);
+    setBatch(data.batch || data);
     setLive({ title: "", startAt: "", durationMinutes: 60, meetingUrl: "", provider: "manual" });
   }
 
@@ -101,11 +112,18 @@ export default function ManageBatchPage() {
       setError(data.error || "Failed");
       return;
     }
-    setBatch(data.batch);
+    setBatch(data.batch || data);
     setAnn({ title: "", body: "" });
   }
 
-  if (!batch) return <p className="text-stone-500">Loading…</p>;
+  if (!batch) {
+    return (
+      <div className="space-y-2">
+        <p className="text-stone-500">{error ? "Could not load batch" : "Loading…"}</p>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

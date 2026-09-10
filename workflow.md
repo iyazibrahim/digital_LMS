@@ -68,3 +68,12 @@
 - Studio CRUD: edit/delete for assignments, exercises, quizzes, batches, programs, jobs; user activate/deactivate.
 - Removed Frappe marketing copy; LMS product wording on home + README.
 
+### 2026-09-10 — Admin Studio bugfixes + certificates
+
+- Studio re-login: hydrate roles from DB; login auto-continues if session exists; staff vs unauth redirects split.
+- Marketing chrome uses client `usePathname` (fixes missing header after “View site”).
+- Quiz/Batch edit: parse API payloads correctly (was stuck on Loading).
+- Analytics: return `counts`/`series`, show errors instead of infinite loading.
+- Certificates: HTML/CSS/PNG templates with placeholders, badges auto-award on course complete.
+
+

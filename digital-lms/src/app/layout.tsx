@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/layout/app-shell";
+import { SiteFooter, SiteHeader } from "@/components/layout/site-header";
+import { MarketingChrome } from "@/components/layout/marketing-chrome";
 
 const display = Fraunces({
   variable: "--font-display",
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${body.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <AppShell>{children}</AppShell>
+        <MarketingChrome header={<SiteHeader />} footer={<SiteFooter />}>
+          {children}
+        </MarketingChrome>
       </body>
     </html>
   );

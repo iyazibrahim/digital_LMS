@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -15,10 +15,40 @@ function safeNext(next: string | null) {
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const next = safeNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.user) {
+          if (next.startsWith("/studio") && data.user.isStaff) {
+            router.replace(next);
+            router.refresh();
+            return;
+          }
+          if (!next.startsWith("/studio")) {
+            router.replace(next === "/login" ? "/" : next);
+            router.refresh();
+            return;
+          }
+        }
+        setChecking(false);
+      })
+      .catch(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [next, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +58,7 @@ export default function LoginForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "same-origin",
     });
     const data = await res.json();
     setLoading(false);
@@ -35,8 +66,16 @@ export default function LoginForm() {
       setError(data.error || "Login failed");
       return;
     }
-    router.push(safeNext(searchParams.get("next")));
+    router.push(next);
     router.refresh();
+  }
+
+  if (checking) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center text-stone-500">
+        Checking session…
+      </div>
+    );
   }
 
   return (

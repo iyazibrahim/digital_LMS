@@ -4,9 +4,8 @@ import { connectDB } from "@/lib/db";
 import { Course } from "@/models/Course";
 import { Enrollment } from "@/models/Enrollment";
 import { requireSession, jsonError } from "@/lib/auth";
-import { countLessons } from "@/lib/progress";
+import { countLessons, awardCourseBadges, issueCertificate } from "@/lib/progress";
 import { percent } from "@/lib/utils";
-import { issueCertificate } from "@/lib/progress";
 
 export async function POST(
   req: NextRequest,
@@ -69,6 +68,7 @@ export async function POST(
         const cert = await issueCertificate(session.sub, courseId);
         enrollment.certificateId = cert._id;
       }
+      await awardCourseBadges(session.sub, courseId);
     }
     await enrollment.save();
     return NextResponse.json(enrollment);

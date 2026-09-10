@@ -4,24 +4,82 @@ export interface ICertificateTemplate {
   _id: Types.ObjectId;
   name: string;
   html: string;
+  css?: string;
+  backgroundImageUrl?: string;
+  widthPx: number;
+  heightPx: number;
   isDefault: boolean;
   createdBy: Types.ObjectId;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 const CertificateTemplateSchema = new Schema<ICertificateTemplate>(
   {
     name: { type: String, required: true },
     html: { type: String, required: true },
+    css: { type: String, default: "" },
+    backgroundImageUrl: String,
+    widthPx: { type: Number, default: 1000 },
+    heightPx: { type: Number, default: 700 },
     isDefault: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
-  { timestamps: { createdAt: true, updatedAt: true } }
+  { timestamps: true }
 );
 
 export const CertificateTemplate =
   models.CertificateTemplate ||
   model<ICertificateTemplate>("CertificateTemplate", CertificateTemplateSchema);
+
+export interface IBadge {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  courseId?: Types.ObjectId;
+  autoAwardOnCourseComplete: boolean;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const BadgeSchema = new Schema<IBadge>(
+  {
+    name: { type: String, required: true },
+    description: String,
+    imageUrl: String,
+    courseId: { type: Schema.Types.ObjectId, ref: "Course" },
+    autoAwardOnCourseComplete: { type: Boolean, default: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true }
+);
+
+export const Badge = models.Badge || model<IBadge>("Badge", BadgeSchema);
+
+export interface IUserBadge {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  badgeId: Types.ObjectId;
+  courseId?: Types.ObjectId;
+  awardedAt: Date;
+}
+
+const UserBadgeSchema = new Schema<IUserBadge>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    badgeId: { type: Schema.Types.ObjectId, ref: "Badge", required: true },
+    courseId: { type: Schema.Types.ObjectId, ref: "Course" },
+    awardedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
+UserBadgeSchema.index({ userId: 1, badgeId: 1 }, { unique: true });
+
+export const UserBadge =
+  models.UserBadge || model<IUserBadge>("UserBadge", UserBadgeSchema);
 
 export interface ICertificate {
   _id: Types.ObjectId;

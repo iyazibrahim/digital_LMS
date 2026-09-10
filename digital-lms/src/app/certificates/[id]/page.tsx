@@ -2,8 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { Certificate } from "@/models/Certificate";
-import { getSettings } from "@/models/Settings";
-import { renderCertificateHtml } from "@/lib/progress";
+import { getCertificateRenderSource, renderCertificateHtml } from "@/lib/progress";
 import { isStaff } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/ui/print-button";
@@ -27,13 +26,18 @@ export default async function CertificatePrintPage({
     notFound();
   }
 
-  const settings = await getSettings();
-  const html = renderCertificateHtml(settings.defaultCertificateHtml, {
-    recipientName: certificate.recipientName,
-    courseTitle: certificate.courseTitle,
-    issuedAt: formatDate(certificate.issuedAt),
-    certificateNumber: certificate.certificateNumber,
-  });
+  const source = await getCertificateRenderSource(certificate.templateId?.toString());
+  const html = renderCertificateHtml(
+    source.html,
+    {
+      recipientName: certificate.recipientName,
+      courseTitle: certificate.courseTitle,
+      issuedAt: formatDate(certificate.issuedAt),
+      certificateNumber: certificate.certificateNumber,
+      backgroundImageUrl: source.backgroundImageUrl,
+    },
+    source.css || ""
+  );
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -44,9 +48,10 @@ export default async function CertificatePrintPage({
         </div>
         <PrintButton />
       </div>
-      <div
-        className="certificate-print rounded-xl bg-white p-4 shadow-sm print:shadow-none"
-        dangerouslySetInnerHTML={{ __html: html }}
+      <iframe
+        title="Certificate"
+        className="min-h-[640px] w-full rounded-xl border border-stone-200 bg-white"
+        srcDoc={html}
       />
     </div>
   );

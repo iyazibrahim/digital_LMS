@@ -36,11 +36,24 @@ export default function EditQuizPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`/api/quizzes/${id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.quiz) setQuiz(d.quiz);
+    let cancelled = false;
+    setError("");
+    fetch(`/api/quizzes/${id}`, { credentials: "same-origin" })
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Failed to load quiz");
+        return d.quiz || d;
+      })
+      .then((q) => {
+        if (!cancelled && q?._id) setQuiz(q);
+        else if (!cancelled) setError("Quiz not found");
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message || "Failed to load");
       });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   async function save() {
@@ -50,6 +63,7 @@ export default function EditQuizPage() {
     const res = await fetch(`/api/quizzes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify(quiz),
     });
     const data = await res.json();
@@ -57,7 +71,7 @@ export default function EditQuizPage() {
       setError(data.error || "Save failed");
       return;
     }
-    setQuiz(data.quiz);
+    setQuiz(data.quiz || data);
     setMessage("Quiz saved.");
   }
 
@@ -98,7 +112,14 @@ export default function EditQuizPage() {
     setQuiz({ ...quiz, questions });
   }
 
-  if (!quiz) return <p className="text-stone-500">Loading…</p>;
+  if (!quiz) {
+    return (
+      <div className="space-y-2">
+        <p className="text-stone-500">{error ? "Could not load quiz" : "Loading…"}</p>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

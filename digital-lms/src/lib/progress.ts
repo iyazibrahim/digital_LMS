@@ -2,9 +2,18 @@ import { Types } from "mongoose";
 import { Course } from "@/models/Course";
 import type { ICourse } from "@/models/Course";
 import { Enrollment } from "@/models/Enrollment";
-import { Certificate } from "@/models/Certificate";
+import {
+  Certificate,
+  CertificateTemplate,
+  Badge,
+  UserBadge,
+} from "@/models/Certificate";
 import { User } from "@/models/User";
+import { getSettings } from "@/models/Settings";
 import { percent } from "@/lib/utils";
+import { DEFAULT_CERT_CSS, DEFAULT_CERT_HTML } from "@/lib/certificate-defaults";
+
+export { DEFAULT_CERT_CSS, DEFAULT_CERT_HTML } from "@/lib/certificate-defaults";
 
 export function countLessons(course: ICourse) {
   return course.chapters.reduce((acc, ch) => {
@@ -64,10 +73,32 @@ export async function markLessonComplete(
       const cert = await issueCertificate(userId, courseId);
       enrollment.certificateId = cert._id;
     }
+    await awardCourseBadges(userId, courseId);
   }
 
   await enrollment.save();
   return enrollment;
+}
+
+export async function awardCourseBadges(userId: string, courseId: string) {
+  const badges = await Badge.find({
+    courseId,
+    autoAwardOnCourseComplete: true,
+  });
+  for (const badge of badges) {
+    await UserBadge.findOneAndUpdate(
+      { userId, badgeId: badge._id },
+      {
+        $setOnInsert: {
+          userId,
+          badgeId: badge._id,
+          courseId,
+          awardedAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
 }
 
 export async function issueCertificate(userId: string, courseId: string, batchId?: string) {
@@ -78,6 +109,8 @@ export async function issueCertificate(userId: string, courseId: string, batchId
   const course = await Course.findById(courseId);
   if (!user || !course) throw new Error("User or course not found");
 
+  const template = await CertificateTemplate.findOne({ isDefault: true });
+
   const certificateNumber = `DP-${Date.now().toString(36).toUpperCase()}-${Math.random()
     .toString(36)
     .slice(2, 6)
@@ -87,6 +120,7 @@ export async function issueCertificate(userId: string, courseId: string, batchId
     userId,
     courseId,
     batchId,
+    templateId: template?._id,
     certificateNumber,
     recipientName: user.name,
     courseTitle: course.title,
@@ -101,11 +135,43 @@ export function renderCertificateHtml(
     courseTitle: string;
     issuedAt: string;
     certificateNumber: string;
-  }
+    backgroundImageUrl?: string;
+  },
+  css = ""
 ) {
-  return template
+  const filled = template
     .replaceAll("{{recipientName}}", data.recipientName)
+    .replaceAll("{{name}}", data.recipientName)
     .replaceAll("{{courseTitle}}", data.courseTitle)
+    .replaceAll("{{course}}", data.courseTitle)
     .replaceAll("{{issuedAt}}", data.issuedAt)
-    .replaceAll("{{certificateNumber}}", data.certificateNumber);
+    .replaceAll("{{date}}", data.issuedAt)
+    .replaceAll("{{certificateNumber}}", data.certificateNumber)
+    .replaceAll("{{number}}", data.certificateNumber);
+
+  const bg = data.backgroundImageUrl
+    ? `background-image:url('${data.backgroundImageUrl}');background-size:cover;background-position:center;`
+    : "";
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+body{margin:0;padding:24px;font-family:Georgia,serif;${bg}}
+${css}
+</style></head><body>${filled}</body></html>`;
+}
+
+export async function getCertificateRenderSource(templateId?: string | null) {
+  if (templateId) {
+    const t = await CertificateTemplate.findById(templateId).lean();
+    if (t) return t;
+  }
+  const def = await CertificateTemplate.findOne({ isDefault: true }).lean();
+  if (def) return def;
+  const settings = await getSettings();
+  return {
+    html: settings.defaultCertificateHtml,
+    css: "",
+    backgroundImageUrl: undefined as string | undefined,
+    widthPx: 1000,
+    heightPx: 700,
+  };
 }

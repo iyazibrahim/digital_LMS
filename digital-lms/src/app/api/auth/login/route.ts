@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import {
@@ -7,36 +8,61 @@ import {
   signAccessToken,
   signRefreshToken,
   setAuthCookies,
-  jsonError,
   AuthError,
 } from "@/lib/auth";
 import { Role } from "@/lib/constants";
+import { ensureSeed } from "@/lib/ensure-seed";
 
 const schema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
+function fail(message: string, status: number, detail?: unknown) {
+  const body: Record<string, unknown> = { error: message };
+  if (process.env.SHOW_ERROR_DETAILS === "1" && detail) {
+    body.detail = detail instanceof Error ? detail.message : String(detail);
+  }
+  return NextResponse.json(body, { status });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
+
     try {
       await connectDB();
     } catch (dbErr) {
       console.error("[login] DB connection failed", dbErr);
-      return NextResponse.json(
-        {
-          error:
-            "Database unavailable. Check MONGODB_URI and that MongoDB is running.",
-        },
-        { status: 503 }
+      return fail(
+        "Database unavailable. In Dokploy, set MONGODB_URI=mongodb://mongo:27017/digital-lms and ensure the mongo service is healthy.",
+        503,
+        dbErr
       );
     }
 
+    try {
+      await ensureSeed();
+    } catch (seedErr) {
+      console.error("[login] seed failed", seedErr);
+      return fail(
+        "Could not prepare admin account. Check mongo logs and SEED_* env vars.",
+        503,
+        seedErr
+      );
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return fail("Database not connected.", 503);
+    }
+
     const user = await User.findOne({ email: body.email.toLowerCase() });
-    if (!user || !(await verifyPassword(body.password, user.passwordHash))) {
+    if (!user?.passwordHash) {
       throw new AuthError("Invalid email or password", 401);
     }
+
+    const ok = await verifyPassword(body.password, user.passwordHash);
+    if (!ok) throw new AuthError("Invalid email or password", 401);
     if (!user.isActive) throw new AuthError("Account disabled", 403);
 
     user.lastLoginAt = new Date();
@@ -46,7 +72,7 @@ export async function POST(req: NextRequest) {
       sub: String(user._id),
       email: user.email,
       name: user.name,
-      roles: user.roles as Role[],
+      roles: (user.roles || ["student"]) as Role[],
     };
     const access = await signAccessToken(payload);
     const refresh = await signRefreshToken(payload);
@@ -57,8 +83,16 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.issues[0]?.message }, { status: 400 });
+      return fail(err.issues[0]?.message || "Invalid input", 400);
     }
-    return jsonError(err);
+    if (err instanceof AuthError) {
+      return fail(err.message, err.status);
+    }
+    console.error("[login] unexpected", err);
+    return fail(
+      "Login failed. Check app logs, MongoDB, and that Dokploy domain port is 3000 (container port).",
+      500,
+      err
+    );
   }
 }

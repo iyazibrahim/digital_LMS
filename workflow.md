@@ -48,3 +48,11 @@
 - Replaced teal/green palette with Digital Penang blue + white.
 - `ensureSeed()` runs on every DB connect; creates admin/demo users from ENV.
 - Login returns 503 (not 500) when MongoDB is unreachable.
+
+### 2026-09-10 — Fix production login 500 (Dokploy)
+
+- Root cause likely: Dokploy domain Port set to **8090** (host map) instead of container **3000**.
+- Hardened `/api/auth/login` with clearer DB/seed errors + `SHOW_ERROR_DETAILS`.
+- Added `/api/health` for Mongo readiness + user count.
+- Compose: `expose: 3000`, healthcheck on `/api/health`, Dokploy notes in README.
+- Validation: `npm run build` passed.

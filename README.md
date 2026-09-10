@@ -44,7 +44,7 @@ Accounts are **auto-created on first DB connect** (manual `npm run seed` is opti
 
 Set `SEED_RESET_ADMIN_PASSWORD=1` to force-reset the admin password from ENV on next boot.
 
-## Production (Docker)
+## Production (Docker / Dokploy)
 
 From repo root:
 
@@ -53,7 +53,31 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-App publishes on **8090** for Cloudflare Tunnel → `lms.iyazbrhm.cloud`.
+App container listens on **3000**. Host publish is **8090** for tunnels.
+
+### Dokploy domain settings (important)
+
+| Field | Value |
+|--------|--------|
+| Domain | `lms.iyazbrhm.cloud` |
+| Port | **3000** (container port — not 8090) |
+| Path | `/` |
+
+If Port is `8090`, Traefik talks to the wrong port inside the container.
+
+Environment must include:
+
+```
+MONGODB_URI=mongodb://mongo:27017/digital-lms
+SEED_ADMIN_EMAIL=admin@digitalpenang.my
+SEED_ADMIN_PASSWORD=admin123
+SEED_RESET_ADMIN_PASSWORD=1
+SHOW_ERROR_DETAILS=1
+```
+
+After a successful login, set `SEED_RESET_ADMIN_PASSWORD=0`.
+
+Health check: `https://lms.iyazbrhm.cloud/api/health`
 
 ## Project layout
 

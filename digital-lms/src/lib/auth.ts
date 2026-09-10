@@ -28,7 +28,12 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, hash: string) {
-  return bcrypt.compare(password, hash);
+  if (!password || !hash) return false;
+  try {
+    return await bcrypt.compare(password, hash);
+  } catch {
+    return false;
+  }
 }
 
 export async function signAccessToken(payload: AuthPayload) {

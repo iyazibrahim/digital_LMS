@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import {
@@ -190,6 +190,19 @@ export async function resolveSessionFromTokenPair(
 }
 
 export async function getSession(): Promise<AuthPayload | null> {
+  // Bearer token from client authFetch (works when cookies are stripped by proxy/CDN)
+  try {
+    const h = await headers();
+    const auth = h.get("authorization") || h.get("Authorization");
+    if (auth?.toLowerCase().startsWith("bearer ")) {
+      const token = auth.slice(7).trim();
+      const payload = await verifyAccessToken(token);
+      if (payload) return hydratePayload(payload);
+    }
+  } catch {
+    /* headers() unavailable in some contexts */
+  }
+
   const jar = await cookies();
   return resolveSessionFromTokenPair(
     jar.get(ACCESS_COOKIE)?.value,
@@ -198,6 +211,11 @@ export async function getSession(): Promise<AuthPayload | null> {
 }
 
 export async function getSessionFromRequest(req: NextRequest): Promise<AuthPayload | null> {
+  const auth = req.headers.get("authorization") || req.headers.get("Authorization");
+  if (auth?.toLowerCase().startsWith("bearer ")) {
+    const payload = await verifyAccessToken(auth.slice(7).trim());
+    if (payload) return hydratePayload(payload);
+  }
   return resolveSessionFromTokenPair(
     req.cookies.get(ACCESS_COOKIE)?.value,
     req.cookies.get(REFRESH_COOKIE)?.value

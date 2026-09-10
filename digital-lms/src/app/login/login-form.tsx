@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { persistAuthTokens } from "@/lib/client-auth";
 
 export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string }) {
   const [email, setEmail] = useState("");
@@ -16,20 +17,28 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Login failed");
-      return;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password, next: defaultNext }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+      if (data.accessToken && data.refreshToken) {
+        persistAuthTokens(data.accessToken, data.refreshToken);
+      }
+      // Hard navigation so RSC picks up cookies / tokens
+      window.location.href = defaultNext || "/";
+    } catch {
+      setError("Network error — try again");
+      setLoading(false);
     }
-    // Full navigation so cookies are applied before Studio RSC runs
-    window.location.assign(defaultNext || "/");
   }
 
   return (
@@ -45,6 +54,7 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -56,6 +66,7 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -68,6 +79,21 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
+
+          {/* Fallback: classic form POST (best cookie reliability through Cloudflare) */}
+          <form
+            method="POST"
+            action={`/api/auth/login`}
+            className="mt-3"
+          >
+            <input type="hidden" name="email" value={email} />
+            <input type="hidden" name="password" value={password} />
+            <input type="hidden" name="next" value={defaultNext || "/studio"} />
+            <Button type="submit" variant="outline" className="w-full" disabled={!email || !password}>
+              Sign in (backup method)
+            </Button>
+          </form>
+
           <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-xs text-slate-600">
             <p className="font-medium text-blue-900">Demo accounts (auto-seeded)</p>
             <p className="mt-1">Admin: admin@digitalpenang.my / admin123</p>

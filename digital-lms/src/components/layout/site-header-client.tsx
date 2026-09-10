@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { clearAuthTokens, getAccessToken, persistAuthTokens } from "@/lib/client-auth";
 
 const nav = [
   { href: "/courses", label: "Courses" },
@@ -23,31 +24,39 @@ export function SiteHeaderClient({
   const [name, setName] = useState(sessionName);
   const [isStaffUser, setIsStaffUser] = useState(!!staff);
 
-  // Keep header in sync with real cookies (fixes stale “logged in” UI)
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+    const headers: HeadersInit = {};
+    const token = getAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    void fetch("/api/auth/me", { credentials: "include", cache: "no-store", headers })
       .then(async (r) => {
         const data = await r.json();
         if (cancelled) return;
         if (r.ok && data.user) {
           setName(data.user.name);
           setIsStaffUser(!!data.user.isStaff);
-        } else {
+          // Refresh client tokens if server re-issued session via cookies only
+          if (data.accessToken && data.refreshToken) {
+            persistAuthTokens(data.accessToken, data.refreshToken);
+          }
+        } else if (!getAccessToken()) {
           setName(undefined);
           setIsStaffUser(false);
         }
       })
       .catch(() => {
-        if (!cancelled) {
-          setName(undefined);
-          setIsStaffUser(false);
-        }
+        /* keep SSR values */
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  function onLogoutClick() {
+    clearAuthTokens();
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur">
@@ -85,7 +94,7 @@ export function SiteHeaderClient({
                   {name}
                 </Button>
               </Link>
-              <Link href="/api/auth/logout">
+              <Link href="/api/auth/logout" onClick={onLogoutClick}>
                 <Button variant="outline" size="sm" type="button">
                   Log out
                 </Button>

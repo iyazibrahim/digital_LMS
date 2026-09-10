@@ -3,6 +3,8 @@ import {
   attachSessionCookies,
   cookieSecure,
   getSessionFromRequest,
+  signAccessToken,
+  signRefreshToken,
 } from "@/lib/auth";
 import { isStaff } from "@/lib/constants";
 
@@ -22,6 +24,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const accessToken = await signAccessToken(session);
+  const refreshToken = await signRefreshToken(session);
+
   const res = NextResponse.json(
     {
       user: {
@@ -31,6 +36,8 @@ export async function GET(req: NextRequest) {
         roles: session.roles,
         isStaff: isStaff(session.roles),
       },
+      accessToken,
+      refreshToken,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

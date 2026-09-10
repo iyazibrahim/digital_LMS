@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { clearAuthTokens, getAccessToken } from "@/lib/client-auth";
 
 const links = [
   { href: "/studio", label: "Overview", exact: true },
@@ -64,6 +65,25 @@ export function StudioShell({
   const pathname = usePathname() || "/studio";
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    const original = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers || {});
+      const token = getAccessToken();
+      if (token && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return original(input, {
+        ...init,
+        headers,
+        credentials: init?.credentials || "include",
+      });
+    };
+    return () => {
+      window.fetch = original;
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-blue-100 bg-white px-4 lg:hidden">
@@ -84,7 +104,7 @@ export function StudioShell({
           <span className="hidden max-w-[10rem] truncate text-sm text-stone-600 sm:inline">
             {userName}
           </span>
-          <Link href="/api/auth/logout">
+          <Link href="/api/auth/logout" onClick={() => clearAuthTokens()}>
             <Button variant="outline" size="sm">
               Log out
             </Button>
@@ -93,7 +113,6 @@ export function StudioShell({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        {/* Desktop sidebar */}
         <aside className="hidden w-60 shrink-0 flex-col border-r border-stone-200 bg-white lg:flex">
           <div className="border-b border-blue-100 px-4 py-4">
             <Link href="/" className="font-serif text-lg tracking-tight text-blue-900">
@@ -111,14 +130,17 @@ export function StudioShell({
                 View site
               </Link>
               <span className="text-stone-300">·</span>
-              <Link href="/api/auth/logout" className="text-xs text-stone-500 hover:underline">
+              <Link
+                href="/api/auth/logout"
+                className="text-xs text-stone-500 hover:underline"
+                onClick={() => clearAuthTokens()}
+              >
                 Log out
               </Link>
             </div>
           </div>
         </aside>
 
-        {/* Mobile drawer */}
         {open && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button

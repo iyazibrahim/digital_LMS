@@ -24,11 +24,14 @@ export default function LoginForm() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((data) => {
+    void fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" })
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        return { ok: r.ok, data };
+      })
+      .then(({ ok, data }) => {
         if (cancelled) return;
-        if (data.user) {
+        if (ok && data.user) {
           if (next.startsWith("/studio") && data.user.isStaff) {
             router.replace(next);
             router.refresh();
@@ -59,13 +62,30 @@ export default function LoginForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
       credentials: "same-origin",
+      cache: "no-store",
     });
     const data = await res.json();
-    setLoading(false);
     if (!res.ok) {
+      setLoading(false);
       setError(data.error || "Login failed");
       return;
     }
+
+    // Confirm cookies stuck before navigating
+    const me = await fetch("/api/auth/me", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    setLoading(false);
+    if (!me.ok) {
+      const meData = await me.json().catch(() => ({}));
+      setError(
+        meData.hint ||
+          "Signed in on the server, but the browser did not keep the session cookie. In Dokploy set COOKIE_SECURE=1, stable JWT_* secrets, NEXT_PUBLIC_APP_URL=https://lms.iyazbrhm.cloud, then clear cookies and try again."
+      );
+      return;
+    }
+
     router.push(next);
     router.refresh();
   }

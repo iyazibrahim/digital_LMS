@@ -39,10 +39,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/profile")
+    fetch("/api/profile", { credentials: "same-origin", cache: "no-store" })
       .then(async (r) => {
         if (r.status === 401) {
-          router.push("/login");
+          router.push(`/login?next=${encodeURIComponent("/profile")}`);
           return null;
         }
         return r.json();

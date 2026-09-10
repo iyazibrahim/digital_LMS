@@ -68,6 +68,12 @@
 - Studio CRUD: edit/delete for assignments, exercises, quizzes, batches, programs, jobs; user activate/deactivate.
 - Removed Frappe marketing copy; LMS product wording on home + README.
 
+### 2026-09-10 — Student session 401 fix
+
+- Longer JWT cookie TTL (7d / 30d); `COOKIE_SECURE` from env + `x-forwarded-proto`.
+- Login verifies `/api/auth/me` before navigate; `/api/auth/me` re-issues cookies.
+- Profile / enroll buttons: `credentials: same-origin` + redirect `/login?next=...` on 401.
+
 ### 2026-09-10 — Admin Studio bugfixes + certificates
 
 - Studio re-login: hydrate roles from DB; login auto-continues if session exists; staff vs unauth redirects split.

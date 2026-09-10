@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function ProgramEnrollButton({ programId }: { programId: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [error, setError] = useState("");
 
   async function enroll() {
-    const res = await fetch(`/api/programs/${programId}/enroll`, { method: "POST" });
+    const res = await fetch(`/api/programs/${programId}/enroll`, {
+      method: "POST",
+      credentials: "same-origin",
+    });
     const data = await res.json();
+    if (res.status === 401) {
+      router.push(`/login?next=${encodeURIComponent(pathname || "/")}`);
+      return;
+    }
     if (!res.ok) {
       setError(data.error || "Failed");
       return;

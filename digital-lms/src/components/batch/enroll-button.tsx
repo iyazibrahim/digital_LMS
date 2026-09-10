@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function BatchEnrollButton({ batchId, paid }: { batchId: string; paid: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,9 +18,14 @@ export function BatchEnrollButton({ batchId, paid }: { batchId: string; paid: bo
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetType: "batch", targetId: batchId }),
+        credentials: "same-origin",
       });
       const data = await res.json();
       setLoading(false);
+      if (res.status === 401) {
+        router.push(`/login?next=${encodeURIComponent(pathname || "/")}`);
+        return;
+      }
       if (!res.ok) {
         setError(data.error || "Payment unavailable");
         return;
@@ -29,9 +35,16 @@ export function BatchEnrollButton({ batchId, paid }: { batchId: string; paid: bo
         return;
       }
     }
-    const res = await fetch(`/api/batches/${batchId}/enroll`, { method: "POST" });
+    const res = await fetch(`/api/batches/${batchId}/enroll`, {
+      method: "POST",
+      credentials: "same-origin",
+    });
     const data = await res.json();
     setLoading(false);
+    if (res.status === 401) {
+      router.push(`/login?next=${encodeURIComponent(pathname || "/")}`);
+      return;
+    }
     if (!res.ok) {
       setError(data.error || "Could not enroll");
       return;

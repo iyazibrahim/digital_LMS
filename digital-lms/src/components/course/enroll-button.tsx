@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function EnrollButton({
@@ -16,8 +16,13 @@ export function EnrollButton({
   currency: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function goLogin() {
+    router.push(`/login?next=${encodeURIComponent(pathname || "/")}`);
+  }
 
   async function enroll() {
     setLoading(true);
@@ -27,9 +32,14 @@ export function EnrollButton({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetType: "course", targetId: courseId }),
+        credentials: "same-origin",
       });
       const data = await res.json();
       setLoading(false);
+      if (res.status === 401) {
+        goLogin();
+        return;
+      }
       if (!res.ok) {
         setError(data.error || "Payment unavailable");
         return;
@@ -40,9 +50,16 @@ export function EnrollButton({
       }
     }
 
-    const res = await fetch(`/api/courses/${courseId}/enroll`, { method: "POST" });
+    const res = await fetch(`/api/courses/${courseId}/enroll`, {
+      method: "POST",
+      credentials: "same-origin",
+    });
     const data = await res.json();
     setLoading(false);
+    if (res.status === 401) {
+      goLogin();
+      return;
+    }
     if (!res.ok) {
       setError(data.error || "Could not enroll");
       return;

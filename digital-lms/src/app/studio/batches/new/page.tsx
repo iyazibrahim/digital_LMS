@@ -41,7 +41,7 @@ export default function NewBatchPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="font-serif text-3xl text-teal-950">New batch</h1>
+      <h1 className="font-serif text-3xl text-blue-950">New batch</h1>
       <Card>
         <CardHeader>
           <CardTitle className="font-serif">Cohort details</CardTitle>

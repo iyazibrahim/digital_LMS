@@ -10,9 +10,9 @@ export default async function StudioLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="-mt-0 flex min-h-[calc(100vh-8rem)] border-t border-stone-200 bg-stone-50">
+    <div className="-mt-0 flex min-h-[calc(100vh-8rem)] border-t border-blue-100 bg-slate-50">
       <StudioNav />
-      <div className="flex-1 overflow-auto p-6">{children}</div>
+      <div className="flex-1 overflow-auto p-6 bg-white">{children}</div>
     </div>
   );
 }

@@ -157,7 +157,7 @@ export default function EditCoursePage() {
             Published
           </label>
           <Button onClick={saveMeta}>Save details</Button>
-          {message && <p className="text-sm text-teal-800">{message}</p>}
+          {message && <p className="text-sm text-blue-800">{message}</p>}
         </CardContent>
       </Card>
 

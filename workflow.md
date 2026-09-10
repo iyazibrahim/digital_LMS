@@ -37,7 +37,14 @@
 
 ## Next steps
 
-1. `docker compose up -d mongo` (or full stack) and `npm run seed` locally.
-2. Confirm http://localhost:3000 and Studio at `/studio`.
-3. Point Cloudflare Tunnel at host `:8090` when deploying compose `app`.
-4. Add Stripe/Zoom credentials in Studio → Settings for paid courses and Zoom meetings.
+1. Start MongoDB (`docker compose up -d mongo` or full stack).
+2. Open the app — admin/student accounts auto-seed from ENV on first DB connect.
+3. Log in with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (defaults: admin@digitalpenang.my / admin123).
+4. Point Cloudflare Tunnel at host `:8090` when deploying.
+5. Add Stripe/Zoom credentials in Studio → Settings if needed.
+
+### 2026-09-10 — Blue/white theme + auto-seed
+
+- Replaced teal/green palette with Digital Penang blue + white.
+- `ensureSeed()` runs on every DB connect; creates admin/demo users from ENV.
+- Login returns 503 (not 500) when MongoDB is unreachable.

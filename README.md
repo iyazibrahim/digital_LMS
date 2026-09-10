@@ -27,19 +27,22 @@ docker compose up -d mongo
 cd digital-lms
 cp .env.example .env.local
 npm install
-npm run seed
 npm run dev
 ```
 
 Open http://localhost:3000
 
-### Seed accounts
+Accounts are **auto-created on first DB connect** (manual `npm run seed` is optional).
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@digitalpenang.my | admin123 |
-| Instructor | instructor@digitalpenang.my | instructor123 |
-| Student | student@digitalpenang.my | student123 |
+### Seed accounts (ENV)
+
+| Role | Email | Password | ENV |
+|------|-------|----------|-----|
+| Admin | admin@digitalpenang.my | admin123 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` |
+| Instructor | instructor@digitalpenang.my | instructor123 | `SEED_INSTRUCTOR_*` |
+| Student | student@digitalpenang.my | student123 | `SEED_STUDENT_*` |
+
+Set `SEED_RESET_ADMIN_PASSWORD=1` to force-reset the admin password from ENV on next boot.
 
 ## Production (Docker)
 

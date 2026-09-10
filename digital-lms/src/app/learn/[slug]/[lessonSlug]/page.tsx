@@ -110,7 +110,7 @@ export default async function LessonPlayerPage({
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[240px_1fr]">
       <aside className="space-y-2">
-        <Link href={`/courses/${slug}`} className="text-sm text-teal-700 hover:underline">
+        <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
           ← {course.title}
         </Link>
         <nav className="mt-4 space-y-1">
@@ -120,7 +120,7 @@ export default async function LessonPlayerPage({
               href={`/learn/${slug}/${l.slug}`}
               className={`block rounded-lg px-3 py-2 text-sm ${
                 l.slug === lessonSlug
-                  ? "bg-teal-50 font-medium text-teal-900"
+                  ? "bg-blue-50 font-medium text-blue-900"
                   : "text-stone-600 hover:bg-stone-100"
               }`}
             >
@@ -164,7 +164,7 @@ export default async function LessonPlayerPage({
                     href={lesson.pdfUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-teal-700 hover:underline"
+                    className="text-blue-700 hover:underline"
                   >
                     Open PDF
                   </a>
@@ -251,7 +251,7 @@ function VideoEmbed({ url }: { url: string }) {
     return <video src={url} controls className="w-full rounded-xl" />;
   }
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline">
+    <a href={url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
       Open video
     </a>
   );

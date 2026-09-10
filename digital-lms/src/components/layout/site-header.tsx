@@ -15,20 +15,20 @@ export async function SiteHeader() {
   const staff = isStaff(session?.roles);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#F7F4EF]/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-8">
-          <Link href="/" className="font-serif text-xl tracking-tight text-teal-900">
-            Digital Penang <span className="text-teal-600">LMS</span>
+          <Link href="/" className="font-serif text-xl tracking-tight text-blue-900">
+            Digital Penang <span className="text-blue-600">LMS</span>
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-stone-600 md:flex">
             {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-teal-800">
+              <Link key={item.href} href={item.href} className="hover:text-blue-800">
                 {item.label}
               </Link>
             ))}
             {staff && (
-              <Link href="/studio" className="font-medium text-teal-800 hover:text-teal-950">
+              <Link href="/studio" className="font-medium text-blue-800 hover:text-blue-950">
                 Studio
               </Link>
             )}

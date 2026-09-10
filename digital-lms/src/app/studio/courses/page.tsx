@@ -22,7 +22,7 @@ export default async function StudioCoursesPage() {
       <div className="mt-6 space-y-3">
         {courses.map((c) => (
           <Link key={String(c._id)} href={`/studio/courses/${c._id}`}>
-            <Card className="mb-3 hover:border-teal-300">
+            <Card className="mb-3 hover:border-blue-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base">{c.title}</CardTitle>
                 <Badge variant={c.published ? "success" : "muted"}>

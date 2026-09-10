@@ -20,7 +20,19 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (dbErr) {
+      console.error("[login] DB connection failed", dbErr);
+      return NextResponse.json(
+        {
+          error:
+            "Database unavailable. Check MONGODB_URI and that MongoDB is running.",
+        },
+        { status: 503 }
+      );
+    }
+
     const user = await User.findOne({ email: body.email.toLowerCase() });
     if (!user || !(await verifyPassword(body.password, user.passwordHash))) {
       throw new AuthError("Invalid email or password", 401);

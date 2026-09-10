@@ -39,7 +39,7 @@ export default async function CertificatePrintPage({
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between print:hidden">
         <div>
-          <h1 className="font-serif text-2xl text-teal-950">Certificate</h1>
+          <h1 className="font-serif text-2xl text-blue-950">Certificate</h1>
           <p className="text-sm text-stone-500">{certificate.certificateNumber}</p>
         </div>
         <PrintButton />

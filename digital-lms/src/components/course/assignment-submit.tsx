@@ -66,7 +66,7 @@ export function AssignmentSubmit({
         <Button onClick={submit} disabled={!fileUrl || loading}>
           {loading ? "Submitting…" : "Submit assignment"}
         </Button>
-        {message && <p className="text-sm text-teal-800">{message}</p>}
+        {message && <p className="text-sm text-blue-800">{message}</p>}
       </CardContent>
     </Card>
   );

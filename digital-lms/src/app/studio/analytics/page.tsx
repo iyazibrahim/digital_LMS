@@ -46,7 +46,7 @@ export default function StudioAnalyticsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">Analytics</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Analytics</h1>
         <p className="text-stone-600">Signups, enrollments, and completions (14 days).</p>
       </div>
 
@@ -59,7 +59,7 @@ export default function StudioAnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-serif text-3xl text-teal-900">{v}</p>
+              <p className="font-serif text-3xl text-blue-900">{v}</p>
             </CardContent>
           </Card>
         ))}
@@ -77,7 +77,7 @@ export default function StudioAnalyticsPage() {
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="signups" fill="#0f766e" name="Signups" />
+              <Bar dataKey="signups" fill="#1D4ED8" name="Signups" />
               <Bar dataKey="enrollments" fill="#b45309" name="Enrollments" />
               <Bar dataKey="completions" fill="#44403c" name="Completions" />
             </BarChart>

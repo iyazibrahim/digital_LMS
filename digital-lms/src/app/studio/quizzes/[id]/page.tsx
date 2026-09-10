@@ -103,10 +103,10 @@ export default function EditQuizPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-serif text-3xl text-teal-950">Edit quiz</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Edit quiz</h1>
         <Button onClick={save}>Save quiz</Button>
       </div>
-      {message && <p className="text-sm text-teal-800">{message}</p>}
+      {message && <p className="text-sm text-blue-800">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Card>

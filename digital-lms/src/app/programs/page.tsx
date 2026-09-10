@@ -20,7 +20,7 @@ export default async function ProgramsPage() {
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {programs.map((p) => (
           <Link key={String(p._id)} href={`/programs/${p.slug}`}>
-            <Card className="h-full hover:border-teal-300">
+            <Card className="h-full hover:border-blue-300">
               <CardHeader>
                 <Badge variant="default">Program</Badge>
                 <CardTitle className="mt-2 font-serif">{p.title}</CardTitle>

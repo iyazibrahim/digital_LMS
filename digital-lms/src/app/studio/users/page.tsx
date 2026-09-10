@@ -58,7 +58,7 @@ export default function StudioUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">Users</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Users</h1>
         <p className="text-stone-600">Search learners and change roles (admin).</p>
       </div>
       <form
@@ -78,7 +78,7 @@ export default function StudioUsersPage() {
           Search
         </Button>
       </form>
-      {message && <p className="text-sm text-teal-800">{message}</p>}
+      {message && <p className="text-sm text-blue-800">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white">

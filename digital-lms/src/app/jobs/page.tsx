@@ -17,7 +17,7 @@ export default async function JobsPage() {
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {jobs.map((j) => (
           <Link key={String(j._id)} href={`/jobs/${j._id}`}>
-            <Card className="h-full hover:border-teal-300">
+            <Card className="h-full hover:border-blue-300">
               <CardHeader>
                 <div className="flex flex-wrap gap-2">
                   <Badge>{j.type.replace("_", " ")}</Badge>

@@ -45,7 +45,7 @@ export default async function BatchDetailPage({
 
       <div className="mt-6">
         {enrolled ? (
-          <p className="text-teal-800">You are enrolled in this batch.</p>
+          <p className="text-blue-800">You are enrolled in this batch.</p>
         ) : (
           <BatchEnrollButton batchId={String(batch._id)} paid={batch.paid} />
         )}
@@ -61,7 +61,7 @@ export default async function BatchDetailPage({
               <Link
                 key={String(c._id)}
                 href={`/courses/${c.slug}`}
-                className="block text-teal-700 hover:underline"
+                className="block text-blue-700 hover:underline"
               >
                 {c.title}
               </Link>
@@ -83,7 +83,7 @@ export default async function BatchDetailPage({
                     href={lc.meetingUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-teal-700 hover:underline"
+                    className="text-blue-700 hover:underline"
                   >
                     Join meeting
                   </a>

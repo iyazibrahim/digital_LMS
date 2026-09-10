@@ -37,7 +37,7 @@ export default function JobApplicationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">{job.title}</h1>
+        <h1 className="font-serif text-3xl text-blue-950">{job.title}</h1>
         <p className="text-stone-600">
           {job.companyName} · Applications ({applications.length})
         </p>
@@ -58,7 +58,7 @@ export default function JobApplicationsPage() {
             <CardContent className="text-sm text-stone-600">
               {app.coverLetter && <p className="mb-2">{app.coverLetter}</p>}
               {app.resumeUrl && (
-                <a href={app.resumeUrl} className="text-teal-700 hover:underline" target="_blank">
+                <a href={app.resumeUrl} className="text-blue-700 hover:underline" target="_blank">
                   Resume
                 </a>
               )}

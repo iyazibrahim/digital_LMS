@@ -15,7 +15,7 @@ export default async function StudioBatchesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl text-teal-950">Batches</h1>
+          <h1 className="font-serif text-3xl text-blue-950">Batches</h1>
           <p className="text-stone-600">Live cohorts, announcements, and enrollments.</p>
         </div>
         <Link href="/studio/batches/new">
@@ -49,7 +49,7 @@ export default async function StudioBatchesPage() {
                   {formatDate(b.startDate)} – {formatDate(b.endDate)}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/studio/batches/${b._id}`} className="text-teal-700 hover:underline">
+                  <Link href={`/studio/batches/${b._id}`} className="text-blue-700 hover:underline">
                     Manage
                   </Link>
                 </td>

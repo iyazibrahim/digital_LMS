@@ -21,7 +21,7 @@ export function StudioNav({ pathname }: { pathname?: string }) {
   return (
     <aside className="w-56 shrink-0 border-r border-stone-200 bg-white">
       <div className="p-4">
-        <Link href="/" className="font-serif text-lg text-teal-900">
+        <Link href="/" className="font-serif text-lg text-blue-900">
           Studio
         </Link>
         <p className="text-xs text-stone-500">Instructor & admin console</p>
@@ -32,10 +32,10 @@ export function StudioNav({ pathname }: { pathname?: string }) {
             key={l.href}
             href={l.href}
             className={cn(
-              "rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-teal-900",
+              "rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-blue-900",
               (pathname === l.href ||
                 (l.href !== "/studio" && pathname?.startsWith(l.href))) &&
-                "bg-teal-50 font-medium text-teal-900"
+                "bg-blue-50 font-medium text-blue-900"
             )}
           >
             {l.label}

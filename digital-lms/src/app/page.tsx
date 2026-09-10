@@ -40,10 +40,10 @@ export default function HomePage() {
   return (
     <div>
       <section className="relative overflow-hidden border-b border-stone-200">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(15,118,110,0.12),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(29,78,216,0.12),_transparent_55%)]" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-2 md:items-center">
           <div>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-teal-700">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
               Digital Penang
             </p>
             <h1 className="font-serif text-4xl leading-tight text-stone-900 md:text-5xl">
@@ -64,7 +64,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <Card className="border-teal-100 bg-gradient-to-br from-white to-teal-50/40">
+          <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/40">
             <CardHeader>
               <CardTitle className="font-serif text-2xl">Built for Penang learners</CardTitle>
               <CardDescription>
@@ -87,7 +87,7 @@ export default function HomePage() {
           {pillars.map((p) => (
             <Card key={p.title}>
               <CardHeader>
-                <p.icon className="mb-2 h-6 w-6 text-teal-700" />
+                <p.icon className="mb-2 h-6 w-6 text-blue-700" />
                 <CardTitle className="text-base">{p.title}</CardTitle>
                 <CardDescription>{p.body}</CardDescription>
               </CardHeader>

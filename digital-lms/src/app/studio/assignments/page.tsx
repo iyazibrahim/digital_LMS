@@ -14,7 +14,7 @@ export default async function StudioAssignmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl text-teal-950">Assignments</h1>
+          <h1 className="font-serif text-3xl text-blue-950">Assignments</h1>
           <p className="text-stone-600">File submission tasks for lessons.</p>
         </div>
         <Link href="/studio/assignments/new">

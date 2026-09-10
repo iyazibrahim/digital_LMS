@@ -62,7 +62,7 @@ export default function StudioCertificatesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">Certificates</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Certificates</h1>
         <p className="text-stone-600">Issued certificates and manual issuance.</p>
       </div>
 
@@ -98,7 +98,7 @@ export default function StudioCertificatesPage() {
               <Button type="submit">Issue certificate</Button>
             </div>
           </form>
-          {message && <p className="mt-2 text-sm text-teal-800">{message}</p>}
+          {message && <p className="mt-2 text-sm text-blue-800">{message}</p>}
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </CardContent>
       </Card>
@@ -122,7 +122,7 @@ export default function StudioCertificatesPage() {
                 <td className="px-4 py-3">{c.courseTitle}</td>
                 <td className="px-4 py-3 text-stone-500">{formatDate(c.issuedAt)}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/certificates/${c._id}`} className="text-teal-700 hover:underline">
+                  <Link href={`/certificates/${c._id}`} className="text-blue-700 hover:underline">
                     View
                   </Link>
                 </td>

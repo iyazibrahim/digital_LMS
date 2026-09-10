@@ -30,7 +30,7 @@ const SettingsSchema = new Schema<ISettings>(
     logoUrl: String,
     allowGuestAccess: { type: Boolean, default: true },
     allowSignup: { type: Boolean, default: true },
-    primaryColor: { type: String, default: "#0F766E" },
+    primaryColor: { type: String, default: "#1D4ED8" },
     zoomAccountId: String,
     zoomClientId: String,
     zoomClientSecret: String,
@@ -43,7 +43,7 @@ const SettingsSchema = new Schema<ISettings>(
     enableDiscussions: { type: Boolean, default: true },
     defaultCertificateHtml: {
       type: String,
-      default: `<div style="border:8px solid #0F766E;padding:48px;text-align:center;font-family:Georgia,serif">
+      default: `<div style="border:8px solid #1D4ED8;padding:48px;text-align:center;font-family:Georgia,serif">
   <h1>Certificate of Completion</h1>
   <p>This certifies that</p>
   <h2>{{recipientName}}</h2>

@@ -42,7 +42,7 @@ export default function NewJobPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="font-serif text-3xl text-teal-950">Post a job</h1>
+      <h1 className="font-serif text-3xl text-blue-950">Post a job</h1>
       <Card>
         <CardHeader>
           <CardTitle className="font-serif">Listing</CardTitle>

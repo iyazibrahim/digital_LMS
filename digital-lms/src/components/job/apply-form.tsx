@@ -46,7 +46,7 @@ export function JobApplyForm({ jobId }: { jobId: string }) {
             <Label>Resume URL</Label>
             <Input value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} />
           </div>
-          {message && <p className="text-sm text-teal-800">{message}</p>}
+          {message && <p className="text-sm text-blue-800">{message}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? "Submitting…" : "Submit application"}

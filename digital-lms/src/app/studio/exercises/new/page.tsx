@@ -41,7 +41,7 @@ export default function NewExercisePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-serif text-3xl text-teal-950">New exercise</h1>
+      <h1 className="font-serif text-3xl text-blue-950">New exercise</h1>
       <Card>
         <CardHeader>
           <CardTitle className="font-serif">Details</CardTitle>

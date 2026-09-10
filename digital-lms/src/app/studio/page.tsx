@@ -37,7 +37,7 @@ export default async function StudioHomePage() {
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (
           <Link key={s.label} href={s.href}>
-            <Card className="hover:border-teal-300">
+            <Card className="hover:border-blue-300">
               <CardHeader>
                 <CardTitle className="text-sm text-stone-500">{s.label}</CardTitle>
               </CardHeader>

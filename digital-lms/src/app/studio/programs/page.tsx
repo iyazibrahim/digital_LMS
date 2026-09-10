@@ -14,7 +14,7 @@ export default async function StudioProgramsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl text-teal-950">Programs</h1>
+          <h1 className="font-serif text-3xl text-blue-950">Programs</h1>
           <p className="text-stone-600">Multi-course learning paths.</p>
         </div>
         <Link href="/studio/programs/new">

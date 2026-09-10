@@ -84,7 +84,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-10">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">Your profile</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Your profile</h1>
         <p className="text-stone-600">{data.user.email}</p>
       </div>
 
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                 }
               />
             </div>
-            {message && <p className="text-sm text-teal-800">{message}</p>}
+            {message && <p className="text-sm text-blue-800">{message}</p>}
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : "Save profile"}
@@ -166,7 +166,7 @@ export default function ProfilePage() {
             <div key={en._id} className="flex justify-between border-b border-stone-100 py-2">
               <Link
                 href={en.courseId?.slug ? `/courses/${en.courseId.slug}` : "#"}
-                className="text-teal-800 hover:underline"
+                className="text-blue-800 hover:underline"
               >
                 {en.courseId?.title || "Course"}
               </Link>
@@ -187,7 +187,7 @@ export default function ProfilePage() {
           {data.certificates.map((c) => (
             <div key={c._id} className="flex justify-between border-b border-stone-100 py-2">
               <div>
-                <Link href={`/certificates/${c._id}`} className="text-teal-800 hover:underline">
+                <Link href={`/certificates/${c._id}`} className="text-blue-800 hover:underline">
                   {c.courseTitle}
                 </Link>
                 <p className="text-xs text-stone-400">{c.certificateNumber}</p>

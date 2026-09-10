@@ -138,7 +138,7 @@ export function QuizPlayer({
                     <label
                       key={idx}
                       className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                        selected ? "border-teal-600 bg-teal-50" : "border-stone-200"
+                        selected ? "border-blue-600 bg-blue-50" : "border-stone-200"
                       }`}
                     >
                       <input

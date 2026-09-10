@@ -47,7 +47,7 @@ export default async function ProgramDetailPage({
       )}
       <div className="mt-6">
         {enrolled ? (
-          <p className="text-teal-800">You are enrolled in this program.</p>
+          <p className="text-blue-800">You are enrolled in this program.</p>
         ) : (
           <ProgramEnrollButton programId={String(program._id)} />
         )}
@@ -62,7 +62,7 @@ export default async function ProgramDetailPage({
               <p className="text-xs text-stone-400">Step {i + 1}</p>
               <Link
                 href={`/courses/${c.slug}`}
-                className="font-medium text-teal-800 hover:underline"
+                className="font-medium text-blue-800 hover:underline"
               >
                 {c.title}
               </Link>

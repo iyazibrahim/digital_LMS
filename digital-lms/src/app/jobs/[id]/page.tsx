@@ -24,7 +24,7 @@ export default async function JobDetailPage({
         <Badge>{job.type.replace("_", " ")}</Badge>
         {job.location && <Badge variant="muted">{job.location}</Badge>}
       </div>
-      <h1 className="mt-3 font-serif text-4xl text-teal-950">{job.title}</h1>
+      <h1 className="mt-3 font-serif text-4xl text-blue-950">{job.title}</h1>
       <p className="mt-2 text-lg text-stone-600">
         {job.companyName}
         {job.salaryRange ? ` · ${job.salaryRange}` : ""}
@@ -41,7 +41,7 @@ export default async function JobDetailPage({
           <JobApplyForm jobId={String(job._id)} />
         ) : (
           <p className="text-stone-600">
-            <a href="/login" className="text-teal-700 hover:underline">
+            <a href="/login" className="text-blue-700 hover:underline">
               Log in
             </a>{" "}
             to apply.

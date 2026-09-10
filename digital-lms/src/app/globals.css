@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f4ef;
-  --foreground: #1c1917;
+  --background: #ffffff;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --teal: #0f766e;
-  --teal-dark: #115e59;
-  --accent: #c2410c;
+  --brand: #1d4ed8;
+  --brand-dark: #1e40af;
+  --accent: #2563eb;
 }
 
 @theme inline {
@@ -26,7 +26,7 @@ body {
 .prose-lesson h2,
 .prose-lesson h3 {
   font-family: var(--font-display), Georgia, serif;
-  color: #134e4a;
+  color: #1e3a8a;
   margin-top: 1.25rem;
   margin-bottom: 0.5rem;
 }

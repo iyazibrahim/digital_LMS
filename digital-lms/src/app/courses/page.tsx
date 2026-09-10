@@ -17,7 +17,7 @@ export default async function CoursesPage() {
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {courses.map((c) => (
           <Link key={String(c._id)} href={`/courses/${c.slug}`}>
-            <Card className="h-full transition hover:border-teal-300 hover:shadow-md">
+            <Card className="h-full transition hover:border-blue-300 hover:shadow-md">
               <CardHeader>
                 {c.category && <Badge variant="muted">{c.category}</Badge>}
                 <CardTitle className="mt-2 font-serif">{c.title}</CardTitle>

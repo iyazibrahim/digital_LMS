@@ -20,7 +20,7 @@ export default async function BatchesPage() {
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         {batches.map((b) => (
           <Link key={String(b._id)} href={`/batches/${b.slug}`}>
-            <Card className="h-full hover:border-teal-300">
+            <Card className="h-full hover:border-blue-300">
               <CardHeader>
                 <Badge variant="default">Cohort</Badge>
                 <CardTitle className="mt-2 font-serif">{b.title}</CardTitle>

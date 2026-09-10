@@ -14,7 +14,7 @@ export default async function StudioJobsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl text-teal-950">Jobs</h1>
+          <h1 className="font-serif text-3xl text-blue-950">Jobs</h1>
           <p className="text-stone-600">Career board listings and applications.</p>
         </div>
         <Link href="/studio/jobs/new">
@@ -40,7 +40,7 @@ export default async function StudioJobsPage() {
                   <Badge variant={j.status === "open" ? "success" : "muted"}>{j.status}</Badge>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/studio/jobs/${j._id}`} className="text-teal-700 hover:underline">
+                  <Link href={`/studio/jobs/${j._id}`} className="text-blue-700 hover:underline">
                     Applications
                   </Link>
                 </td>

@@ -15,7 +15,7 @@ export default async function StudioQuizzesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl text-teal-950">Quizzes</h1>
+          <h1 className="font-serif text-3xl text-blue-950">Quizzes</h1>
           <p className="text-stone-600">Build assessments with optional proctoring.</p>
         </div>
         <Link href="/studio/quizzes/new">
@@ -45,7 +45,7 @@ export default async function StudioQuizzesPage() {
                 </td>
                 <td className="px-4 py-3 text-stone-500">{formatDate(q.updatedAt)}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/studio/quizzes/${q._id}`} className="text-teal-700 hover:underline">
+                  <Link href={`/studio/quizzes/${q._id}`} className="text-blue-700 hover:underline">
                     Edit
                   </Link>
                 </td>

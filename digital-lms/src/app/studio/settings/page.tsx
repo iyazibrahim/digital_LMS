@@ -62,7 +62,7 @@ export default function StudioSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">Site settings</h1>
+        <h1 className="font-serif text-3xl text-blue-950">Site settings</h1>
         <p className="text-stone-600">Brand, features, and certificate template.</p>
       </div>
       <Card>
@@ -129,7 +129,7 @@ export default function StudioSettingsPage() {
                 }
               />
             </div>
-            {message && <p className="text-sm text-teal-800">{message}</p>}
+            {message && <p className="text-sm text-blue-800">{message}</p>}
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : "Save settings"}

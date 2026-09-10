@@ -92,7 +92,7 @@ export default async function CourseDetailPage({
                               </span>
                               {(enrollment || l.isPreview) && (
                                 <Link
-                                  className="text-teal-700 hover:underline"
+                                  className="text-blue-700 hover:underline"
                                   href={`/learn/${course.slug}/${l.slug}`}
                                 >
                                   Open
@@ -123,7 +123,7 @@ export default async function CourseDetailPage({
                   </p>
                   {firstLesson && (
                     <Link href={`/learn/${course.slug}/${firstLesson.lesson.slug}`}>
-                      <span className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-teal-700 text-sm font-medium text-white hover:bg-teal-800">
+                      <span className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-700 text-sm font-medium text-white hover:bg-blue-800">
                         Continue learning
                       </span>
                     </Link>

@@ -110,10 +110,10 @@ export default function ManageBatchPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-serif text-3xl text-teal-950">{batch.title}</h1>
+        <h1 className="font-serif text-3xl text-blue-950">{batch.title}</h1>
         <p className="text-stone-600">Manage live classes, announcements, and learners.</p>
       </div>
-      {message && <p className="text-sm text-teal-800">{message}</p>}
+      {message && <p className="text-sm text-blue-800">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Card>

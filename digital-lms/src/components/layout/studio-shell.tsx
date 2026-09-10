@@ -85,8 +85,8 @@ export function StudioShell({
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-blue-100 bg-white px-4 lg:hidden">
+    <div className="flex min-h-screen flex-col bg-slate-50 lg:h-screen lg:overflow-hidden">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-blue-100 bg-white px-4 lg:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -120,17 +120,17 @@ export function StudioShell({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-60 shrink-0 flex-col border-r border-stone-200 bg-white lg:flex">
-          <div className="border-b border-blue-100 px-4 py-4">
+        <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-stone-200 bg-white lg:flex">
+          <div className="shrink-0 border-b border-blue-100 px-4 py-4">
             <Link href="/" className="font-serif text-lg tracking-tight text-blue-900">
               Digital Penang <span className="text-blue-600">LMS</span>
             </Link>
             <p className="mt-0.5 text-xs text-stone-500">Studio · Instructor & admin</p>
           </div>
-          <div className="flex-1 overflow-y-auto pt-2">
+          <div className="min-h-0 flex-1 overflow-y-auto pt-2">
             <NavLinks pathname={pathname} />
           </div>
-          <div className="border-t border-stone-200 px-4 py-3">
+          <div className="shrink-0 border-t border-stone-200 px-4 py-3">
             <p className="truncate text-sm font-medium text-stone-800">{userName}</p>
             <div className="mt-2 flex gap-2">
               <Link href="/" className="text-xs text-blue-700 hover:underline">
@@ -184,7 +184,9 @@ export function StudioShell({
           </div>
         )}
 
-        <div className="min-w-0 flex-1 overflow-auto bg-white p-4 sm:p-6">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white p-4 sm:p-6">
+          {children}
+        </div>
       </div>
     </div>
   );

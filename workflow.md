@@ -91,7 +91,7 @@
 
 ### 2026-09-10 — LMS Core + Admin alignment
 
-- **Lesson gating:** Heartbeat progress API; Next/Mark complete locked until video ~80%, reading scroll+dwell, quiz pass, assignment/exercise submit, or SCORM dwell. Sidebar still browseable.
+- **Lesson gating:** Heartbeat progress API; Next/Mark complete locked until video ~80%, reading scroll+dwell, quiz pass, assignment/exercise submit, or SCORM dwell. Course sidebar sequentially locked; sticky sidebars on learn + Studio (main content scrolls).
 - **Settings:** Fixed `{ settings }` API shape; bento UI (brand, access, features, learning rules, Zoom/Stripe, certificates); allowlist PATCH; `allowSignup` enforced; `enableBulletin`.
 - **Pagination:** Shared Studio pager on courses/quizzes/assignments/exercises/batches/programs/bulletin/users/evaluations; users search wired.
 - **Password reset:** Admin generates temp password with copy modal; `mustChangePassword` forced on login/profile.

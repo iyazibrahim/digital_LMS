@@ -118,6 +118,18 @@ export default async function LessonPlayerPage({
     (enrollment?.completedLessonIds || []).map((id: Types.ObjectId) => String(id))
   );
 
+  // Sequential unlock: redirect if trying to open a locked lesson via URL
+  if (enrollment && !lesson.isPreview) {
+    const firstIncomplete = allLessons.findIndex(
+      (x: { id: string }) => !completedSet.has(x.id)
+    );
+    const maxOpen = firstIncomplete < 0 ? allLessons.length - 1 : firstIncomplete;
+    if (idx > maxOpen) {
+      const fallback = allLessons[maxOpen] || allLessons[0];
+      if (fallback) redirect(`/learn/${slug}/${fallback.slug}`);
+    }
+  }
+
   const gate =
     enrollment &&
     (await evaluateLessonGate(
@@ -139,35 +151,57 @@ export default async function LessonPlayerPage({
       initialGate={gate || null}
     >
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[240px_1fr]">
-        <aside className="space-y-2">
-          <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
-            ← {course.title}
-          </Link>
-          <nav className="mt-4 space-y-1">
-            {allLessons.map((l: { slug: string; title: string; id: string }) => {
-              const done = completedSet.has(l.id);
-              return (
-                <Link
-                  key={l.slug}
-                  href={`/learn/${slug}/${l.slug}`}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                    l.slug === lessonSlug
-                      ? "bg-blue-50 font-medium text-blue-900"
-                      : "text-stone-600 hover:bg-stone-100"
-                  }`}
-                >
-                  <span className="min-w-0 flex-1 truncate">{l.title}</span>
-                  {done && <span className="text-emerald-600">✓</span>}
-                </Link>
-              );
-            })}
-          </nav>
-          {enrollment && (
-            <p className="pt-4 text-xs text-stone-500">Progress {enrollment.progressPercent}%</p>
-          )}
+        <aside className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
+          <div className="space-y-2">
+            <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
+              ← {course.title}
+            </Link>
+            <nav className="mt-4 space-y-1">
+              {allLessons.map((l: { slug: string; title: string; id: string }, i: number) => {
+                const done = completedSet.has(l.id);
+                // Sequential lock: only completed lessons, current, or the next unlocked one
+                const firstIncomplete = allLessons.findIndex(
+                  (x: { id: string }) => !completedSet.has(x.id)
+                );
+                const unlocked =
+                  done ||
+                  l.slug === lessonSlug ||
+                  i <= (firstIncomplete < 0 ? allLessons.length : firstIncomplete);
+                if (!unlocked) {
+                  return (
+                    <div
+                      key={l.slug}
+                      className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-400"
+                      title="Complete previous lessons first"
+                    >
+                      <span className="min-w-0 flex-1 truncate">{l.title}</span>
+                      <span className="text-xs">Locked</span>
+                    </div>
+                  );
+                }
+                return (
+                  <Link
+                    key={l.slug}
+                    href={`/learn/${slug}/${l.slug}`}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                      l.slug === lessonSlug
+                        ? "bg-blue-50 font-medium text-blue-900"
+                        : "text-stone-600 hover:bg-stone-100"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{l.title}</span>
+                    {done && <span className="text-emerald-600">✓</span>}
+                  </Link>
+                );
+              })}
+            </nav>
+            {enrollment && (
+              <p className="pt-4 text-xs text-stone-500">Progress {enrollment.progressPercent}%</p>
+            )}
+          </div>
         </aside>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div>
             <p className="text-sm text-stone-500">{chapter.title}</p>
             <h1 className="font-serif text-3xl text-stone-900">{lesson.title}</h1>

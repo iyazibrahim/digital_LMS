@@ -32,9 +32,6 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
       }
       if (data.accessToken && data.refreshToken) {
         persistAuthTokens(data.accessToken, data.refreshToken);
-        // #region agent log
-        fetch('http://127.0.0.1:7694/ingest/5a6a4c95-e3c7-440d-8a72-c416ea345cfb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'900175'},body:JSON.stringify({sessionId:'900175',runId:'pre-fix',hypothesisId:'LOGIN',location:'login-form.tsx:persist',message:'login persisted tokens',data:{hasAccess:true,next:defaultNext||'/'},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
       }
       // Hard navigation so RSC picks up cookies / tokens
       window.location.href = defaultNext || "/";

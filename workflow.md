@@ -43,6 +43,13 @@
 4. Point Cloudflare Tunnel at host `:8090` when deploying.
 5. Add Stripe/Zoom credentials in Studio → Settings if needed.
 
+### 2026-09-10 — Logout soft-nav + backup sign-in
+
+- **Root cause (runtime):** Next.js `<Link href="/api/auth/logout">` soft-navigates; logout API never hard-loads. Tokens clear (`ssAccess:false`) but header stays Admin/Studio/Log out; URL stays `/`.
+- **Fix:** `preventDefault` + `window.location.assign('/api/auth/logout')` in site header + studio; remove backup Sign in button from login form.
+- **Evidence:** Chrome DevTools on `lms.iyazbrhm.cloud` after Log out click.
+- Debug instrumentation removed after user confirmed fix.
+
 ### 2026-09-10 — Blue/white theme + auto-seed
 
 - Replaced teal/green palette with Digital Penang blue + white.

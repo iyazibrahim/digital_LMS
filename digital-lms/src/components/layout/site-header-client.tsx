@@ -34,11 +34,6 @@ export function SiteHeaderClient({
       .then(async (r) => {
         const data = await r.json();
         if (cancelled) return;
-        // #region agent log
-        const meLog = {sessionId:'900175',runId:'pre-fix',hypothesisId:'D',location:'site-header-client.tsx:me',message:'/api/auth/me result',data:{ok:r.ok,hasUser:!!data.user,sentBearer:!!token,ssrName:!!sessionName,pathname:typeof location!=='undefined'?location.pathname:''},timestamp:Date.now()};
-        fetch('/api/debug-ingest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(meLog)}).catch(()=>{});
-        fetch('http://127.0.0.1:7694/ingest/5a6a4c95-e3c7-440d-8a72-c416ea345cfb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'900175'},body:JSON.stringify(meLog)}).catch(()=>{});
-        // #endregion
         if (r.ok && data.user) {
           setName(data.user.name);
           setIsStaffUser(!!data.user.isStaff);
@@ -61,25 +56,9 @@ export function SiteHeaderClient({
 
   function onLogoutClick(e: React.MouseEvent) {
     e.preventDefault();
-    const hadToken = !!getAccessToken();
-    const hadName = !!name;
     clearAuthTokens();
     setName(undefined);
     setIsStaffUser(false);
-    // #region agent log
-    const clickLog = {sessionId:'900175',runId:'post-fix',hypothesisId:'A',location:'site-header-client.tsx:onLogoutClick',message:'logout clicked — hard nav',data:{hadToken,hadName,tokenAfter:!!getAccessToken(),nav:'window.location.assign'},timestamp:Date.now()};
-    const body = JSON.stringify(clickLog);
-    try {
-      navigator.sendBeacon("/api/debug-ingest", new Blob([body], { type: "application/json" }));
-    } catch {
-      /* ignore */
-    }
-    fetch("http://127.0.0.1:7694/ingest/5a6a4c95-e3c7-440d-8a72-c416ea345cfb", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "900175" },
-      body,
-    }).catch(() => {});
-    // #endregion
     // Hard navigation so logout Set-Cookie + redirect fully apply (Next Link soft-nav skips this)
     window.location.assign("/api/auth/logout");
   }

@@ -8,11 +8,9 @@ import { requireSession, jsonError } from "@/lib/auth";
 
 /** Simple local runner: compare printed/returned string against expected for demo parity */
 function runSimple(code: string, input: string, language: string): string {
-  // For v1 without Piston: if code contains expected pattern via console.log simulation
-  // Evaluate only safe string-output exercises by extracting final return/print literal.
   try {
     if (language === "javascript" || language === "js") {
-       
+      // eslint-disable-next-line no-new-func
       const fn = new Function(
         "input",
         `${code}\n; if (typeof solve === 'function') return String(solve(input)); if (typeof main === 'function') return String(main(input)); return '';`
@@ -22,12 +20,14 @@ function runSimple(code: string, input: string, language: string): string {
   } catch {
     return "";
   }
-  // Fallback: treat entire trimmed code output marker // OUTPUT: value
   const m = code.match(/OUTPUT:\s*(.+)/i);
   if (m) return m[1].trim();
-  // Or if input unused, use last quoted string in code
   const quotes = [...code.matchAll(/["'`](.+?)["'`]/g)].map((x) => x[1]);
   return quotes.length ? quotes[quotes.length - 1] : "";
+}
+
+function normalizeAnswer(s: string) {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 export async function POST(
@@ -41,6 +41,81 @@ export async function POST(
     await connectDB();
     const exercise = await ProgrammingExercise.findById(id);
     if (!exercise) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const kind = exercise.kind || "coding";
+
+    if (kind === "short_answer") {
+      const answer = String(body.answerText || "").trim();
+      const expected = exercise.expectedAnswers || [];
+      const passed =
+        expected.length === 0
+          ? !!answer
+          : expected.some((a) => normalizeAnswer(a) === normalizeAnswer(answer));
+      const submission = await ProgrammingSubmission.create({
+        exerciseId: id,
+        userId: session.sub,
+        code: "",
+        language: "text",
+        answerText: answer,
+        passed,
+        results: [
+          {
+            input: "",
+            expected: expected.join(" | ") || "(any non-empty)",
+            actual: answer,
+            passed,
+          },
+        ],
+      });
+      return NextResponse.json({
+        passed,
+        message: passed ? "Correct" : "Incorrect answer",
+        results: submission.results,
+        submissionId: submission._id,
+      });
+    }
+
+    if (kind === "written") {
+      const answer = String(body.answerText || "").trim();
+      if (!answer) {
+        return NextResponse.json({ error: "Answer required" }, { status: 400 });
+      }
+      const submission = await ProgrammingSubmission.create({
+        exerciseId: id,
+        userId: session.sub,
+        code: "",
+        language: "text",
+        answerText: answer,
+        passed: true,
+        results: [],
+      });
+      return NextResponse.json({
+        passed: true,
+        message: "Written response submitted",
+        submissionId: submission._id,
+      });
+    }
+
+    if (kind === "file") {
+      const fileUrl = String(body.fileUrl || "").trim();
+      if (!fileUrl) {
+        return NextResponse.json({ error: "File required" }, { status: 400 });
+      }
+      const submission = await ProgrammingSubmission.create({
+        exerciseId: id,
+        userId: session.sub,
+        code: "",
+        language: "file",
+        fileUrl,
+        passed: true,
+        results: [],
+      });
+      return NextResponse.json({
+        passed: true,
+        message: "File submitted",
+        submissionId: submission._id,
+      });
+    }
 
     const results = exercise.testCases.map(
       (tc: { input: string; expectedOutput: string }) => {
@@ -58,12 +133,12 @@ export async function POST(
         };
       }
     );
-    const passed = results.every((r: { passed: boolean }) => r.passed);
+    const passed = results.length ? results.every((r: { passed: boolean }) => r.passed) : false;
 
     const submission = await ProgrammingSubmission.create({
       exerciseId: id,
       userId: session.sub,
-      code: body.code,
+      code: body.code || "",
       language: body.language || exercise.language,
       passed,
       results,
@@ -71,6 +146,7 @@ export async function POST(
 
     return NextResponse.json({
       passed,
+      message: passed ? "All tests passed" : "Some tests failed",
       results,
       submissionId: submission._id,
     });

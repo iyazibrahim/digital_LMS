@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Users, Award, Briefcase, Video, Layers } from "lucide-react";
+import { BookOpen, Users, Award, Newspaper, Video, Layers } from "lucide-react";
 
 const pillars = [
   {
@@ -30,9 +30,9 @@ const pillars = [
     body: "Award certificates automatically when learners complete courses or evaluations.",
   },
   {
-    icon: Briefcase,
-    title: "Job board",
-    body: "Help learners turn skills into career opportunities with a built-in opportunities board.",
+    icon: Newspaper,
+    title: "Bulletin",
+    body: "Share news and announcements with learners through a built-in bulletin board.",
   },
 ];
 
@@ -50,7 +50,7 @@ export default function HomePage() {
               Learn, teach, and grow on Digital Penang LMS.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-stone-600">
-              Courses, live batches, quizzes, SCORM packages, certificates, and a job board — in one
+              Courses, live batches, quizzes, SCORM packages, certificates, and a bulletin — in one
               modern learning platform.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -73,9 +73,9 @@ export default function HomePage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-stone-600">
               <p>✓ Course → Chapter → Lesson hierarchy</p>
-              <p>✓ Quizzes, assignments, and programming exercises</p>
+              <p>✓ Quizzes, assignments, and exercises</p>
               <p>✓ Zoom / Meet live classes with attendance</p>
-              <p>✓ Auto certificates + career opportunities</p>
+              <p>✓ Auto certificates + bulletin updates</p>
             </CardContent>
           </Card>
         </div>

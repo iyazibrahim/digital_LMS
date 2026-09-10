@@ -10,7 +10,7 @@ const nav = [
   { href: "/courses", label: "Courses" },
   { href: "/batches", label: "Batches" },
   { href: "/programs", label: "Programs" },
-  { href: "/jobs", label: "Jobs" },
+  { href: "/bulletin", label: "Bulletin" },
 ];
 
 export function SiteHeaderClient({
@@ -92,7 +92,15 @@ export function SiteHeaderClient({
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          {name ? (
+            {name ? (
+              <Link
+                href="/evaluations"
+                className="hidden text-sm text-stone-600 hover:text-blue-800 sm:inline"
+              >
+                Evaluations
+              </Link>
+            ) : null}
+            {name ? (
             <>
               <Link href="/profile" className="hidden sm:inline">
                 <Button variant="ghost" size="sm">
@@ -135,6 +143,24 @@ export function SiteHeaderClient({
                 {item.label}
               </Link>
             ))}
+            {name && (
+              <Link
+                href="/evaluations"
+                className="rounded-lg px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-100"
+                onClick={() => setOpen(false)}
+              >
+                Evaluations
+              </Link>
+            )}
+            {name && (
+              <Link
+                href="/profile"
+                className="rounded-lg px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-100"
+                onClick={() => setOpen(false)}
+              >
+                Profile
+              </Link>
+            )}
             {isStaffUser && (
               <Link
                 href="/studio"

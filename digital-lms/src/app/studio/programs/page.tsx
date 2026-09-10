@@ -4,12 +4,29 @@ import { Program } from "@/models/Program";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/card";
 import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
+import { StudioPagination } from "@/components/studio/pagination";
+import { paginateQuery } from "@/lib/paginate";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudioProgramsPage() {
+export default async function StudioProgramsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
   await connectDB();
-  const programs = await Program.find().sort({ createdAt: -1 }).lean();
+  const { items: programs, total, totalPages } = await paginateQuery<{
+    _id: unknown;
+    title: string;
+    courseIds?: unknown[];
+    published?: boolean;
+  }>(Program, {}, {
+    page,
+    pageSize: 20,
+    sort: { createdAt: -1 },
+  });
 
   return (
     <div className="space-y-6">
@@ -67,6 +84,12 @@ export default async function StudioProgramsPage() {
           </tbody>
         </table>
       </div>
+      <StudioPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        basePath="/studio/programs"
+      />
     </div>
   );
 }

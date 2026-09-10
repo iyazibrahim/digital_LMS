@@ -89,4 +89,16 @@
 - Analytics: return `counts`/`series`, show errors instead of infinite loading.
 - Certificates: HTML/CSS/PNG templates with placeholders, badges auto-award on course complete.
 
+### 2026-09-10 — LMS Core + Admin alignment
+
+- **Lesson gating:** Heartbeat progress API; Next/Mark complete locked until video ~80%, reading scroll+dwell, quiz pass, assignment/exercise submit, or SCORM dwell. Sidebar still browseable.
+- **Settings:** Fixed `{ settings }` API shape; bento UI (brand, access, features, learning rules, Zoom/Stripe, certificates); allowlist PATCH; `allowSignup` enforced; `enableBulletin`.
+- **Pagination:** Shared Studio pager on courses/quizzes/assignments/exercises/batches/programs/bulletin/users/evaluations; users search wired.
+- **Password reset:** Admin generates temp password with copy modal; `mustChangePassword` forced on login/profile.
+- **Evaluations:** Booking flow — staff publish slots (overlap check), learners book/cancel at `/evaluations`, staff pass/fail (cert on pass when enabled).
+- **Exercises:** Kinds coding / short_answer / written / file.
+- **Jobs → Bulletin:** Public `/bulletin`, Studio CRUD, `/jobs` redirects; nav + home copy updated.
+- **Profile:** Role-aware layouts (student stats/learning vs staff Studio snapshot) + password change.
+- Build: `npm run build` passed.
+
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/input";
+import { useLessonEngagementOptional } from "@/components/course/lesson-engagement";
 
 type Question = {
   _id: string;
@@ -41,6 +42,7 @@ export function QuizPlayer({
   } | null>(null);
   const [violations, setViolations] = useState(0);
   const [loading, setLoading] = useState(false);
+  const engagement = useLessonEngagementOptional();
 
   useEffect(() => {
     if (!quiz.enableProctoring) return;
@@ -91,7 +93,10 @@ export function QuizPlayer({
     });
     const data = await res.json();
     setLoading(false);
-    if (res.ok) setResult(data);
+    if (res.ok) {
+      setResult(data);
+      if (data.passed) await engagement?.refreshGate();
+    }
   }
 
   useEffect(() => {

@@ -13,6 +13,7 @@ export {
   EvaluationRequest,
 } from "./Certificate";
 export { Job, JobApplication } from "./Job";
+export { Bulletin } from "./Bulletin";
 export { Program, ProgramMember } from "./Program";
 export { Payment, Coupon } from "./Payment";
 export { DiscussionThread } from "./Discussion";

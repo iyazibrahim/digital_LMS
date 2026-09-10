@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
+import { useLessonEngagementOptional } from "@/components/course/lesson-engagement";
 
 export function AssignmentSubmit({
   assignment,
@@ -19,6 +20,7 @@ export function AssignmentSubmit({
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const engagement = useLessonEngagementOptional();
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -44,7 +46,12 @@ export function AssignmentSubmit({
     });
     const data = await res.json();
     setLoading(false);
-    setMessage(res.ok ? "Submitted for review" : data.error || "Failed");
+    if (res.ok) {
+      setMessage("Submitted for review");
+      await engagement?.refreshGate();
+    } else {
+      setMessage(data.error || "Failed");
+    }
   }
 
   return (

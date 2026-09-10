@@ -137,7 +137,10 @@ export async function POST(req: NextRequest) {
     const refresh = await signRefreshToken(payload);
 
     if (wantsRedirect) {
-      const dest = new URL(nextPath, req.nextUrl.origin);
+      const destPath = user.mustChangePassword
+        ? `/profile?forcePassword=1&next=${encodeURIComponent(nextPath)}`
+        : nextPath;
+      const dest = new URL(destPath, req.nextUrl.origin);
       const res = NextResponse.redirect(dest, 303);
       await writeCookies(res, access, refresh, req);
       return res;
@@ -149,10 +152,12 @@ export async function POST(req: NextRequest) {
         name: String(user.name),
         email: String(user.email),
         roles,
+        mustChangePassword: !!user.mustChangePassword,
       },
       // Client persists these when Set-Cookie is stripped by CDN/proxy
       accessToken: access,
       refreshToken: refresh,
+      mustChangePassword: !!user.mustChangePassword,
     });
     await writeCookies(res, access, refresh, req);
     return res;

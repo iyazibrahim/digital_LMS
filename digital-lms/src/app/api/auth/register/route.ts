@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
+import { getSettings } from "@/models/Settings";
 import {
   hashPassword,
   signAccessToken,
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
     await connectDB();
+    const settings = await getSettings();
+    if (!settings.allowSignup) {
+      throw new AuthError("Public registration is disabled", 403);
+    }
     const exists = await User.findOne({ email: body.email.toLowerCase() });
     if (exists) throw new AuthError("Email already registered", 409);
 

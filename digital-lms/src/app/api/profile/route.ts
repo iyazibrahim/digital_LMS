@@ -41,12 +41,19 @@ export async function PATCH(req: NextRequest) {
       if (body[key] !== undefined) updates[key] = body[key];
     }
     if (body.password) {
+      if (String(body.password).length < 6) {
+        return NextResponse.json(
+          { error: "Password must be at least 6 characters" },
+          { status: 400 }
+        );
+      }
       updates.passwordHash = await hashPassword(body.password);
+      updates.mustChangePassword = false;
     }
     const user = await User.findByIdAndUpdate(session.sub, { $set: updates }, { new: true }).select(
       "-passwordHash"
     );
-    return NextResponse.json(user);
+    return NextResponse.json({ user });
   } catch (err) {
     return jsonError(err);
   }

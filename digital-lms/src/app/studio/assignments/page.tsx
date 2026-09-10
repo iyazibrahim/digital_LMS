@@ -4,12 +4,29 @@ import { Assignment } from "@/models/Assignment";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
+import { StudioPagination } from "@/components/studio/pagination";
+import { paginateQuery } from "@/lib/paginate";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudioAssignmentsPage() {
+export default async function StudioAssignmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
   await connectDB();
-  const assignments = await Assignment.find().sort({ createdAt: -1 }).lean();
+  const { items: assignments, total, totalPages } = await paginateQuery<{
+    _id: unknown;
+    title: string;
+    maxFileSizeMb?: number;
+    createdAt?: Date;
+  }>(
+    Assignment,
+    {},
+    { page, pageSize: 20, sort: { createdAt: -1 } }
+  );
 
   return (
     <div className="space-y-6">
@@ -63,6 +80,12 @@ export default async function StudioAssignmentsPage() {
           </tbody>
         </table>
       </div>
+      <StudioPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        basePath="/studio/assignments"
+      />
     </div>
   );
 }

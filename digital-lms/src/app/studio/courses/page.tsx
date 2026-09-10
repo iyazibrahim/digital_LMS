@@ -3,12 +3,30 @@ import { connectDB } from "@/lib/db";
 import { Course } from "@/models/Course";
 import { Button } from "@/components/ui/button";
 import { StudioCourseList } from "@/components/studio/course-list";
+import { StudioPagination } from "@/components/studio/pagination";
+import { paginateQuery } from "@/lib/paginate";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudioCoursesPage() {
+export default async function StudioCoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
   await connectDB();
-  const courses = await Course.find().sort({ updatedAt: -1 }).lean();
+  const { items: courses, total, totalPages } = await paginateQuery<{
+    _id: unknown;
+    title: string;
+    slug: string;
+    published?: boolean;
+    chapters?: unknown[];
+  }>(Course, {}, {
+    page,
+    pageSize: 20,
+    sort: { updatedAt: -1 },
+  });
   const rows = courses.map((c) => ({
     _id: String(c._id),
     title: c.title,
@@ -29,6 +47,14 @@ export default async function StudioCoursesPage() {
         </Link>
       </div>
       <StudioCourseList courses={rows} />
+      <div className="mt-4">
+        <StudioPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          basePath="/studio/courses"
+        />
+      </div>
     </div>
   );
 }

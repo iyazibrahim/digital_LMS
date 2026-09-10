@@ -8,15 +8,20 @@ import { Assignment } from "@/models/Assignment";
 import { ProgrammingExercise } from "@/models/ProgrammingExercise";
 import { DiscussionThread } from "@/models/Discussion";
 import { getSession } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CompleteLessonButton } from "@/components/course/complete-lesson-button";
+import {
+  CompleteLessonButton,
+  LessonNavButtons,
+} from "@/components/course/complete-lesson-button";
+import { LessonEngagementProvider } from "@/components/course/lesson-engagement";
+import { ReadingTracker } from "@/components/course/reading-tracker";
 import { QuizPlayer } from "@/components/course/quiz-player";
 import { AssignmentSubmit } from "@/components/course/assignment-submit";
 import { DiscussionPanel } from "@/components/course/discussion-panel";
 import { ExercisePlayer } from "@/components/course/exercise-player";
 import { ScormPlayer } from "@/components/course/scorm-player";
 import { VideoEmbed } from "@/components/course/video-embed";
+import { evaluateLessonGate } from "@/lib/lesson-criteria";
 import type { Types } from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +44,6 @@ export default async function LessonPlayerPage({
   );
   let lesson = chapter?.lessons.find((l: ILesson) => l.slug === lessonSlug);
 
-  // SCORM chapter pseudo-lesson via chapter id slug pattern scorm-<id>
   if (!lesson && lessonSlug.startsWith("scorm-")) {
     const chapterId = lessonSlug.replace("scorm-", "");
     chapter = course.chapters.find(
@@ -92,12 +96,14 @@ export default async function LessonPlayerPage({
             title: ch.title,
             slug: `scorm-${ch._id}`,
             chapterTitle: ch.title,
+            id: String(ch._id),
           },
         ]
       : ch.lessons.map((l: ILesson) => ({
           title: l.title,
           slug: l.slug,
           chapterTitle: ch.title,
+          id: String(l._id),
         }))
   );
   const idx = allLessons.findIndex((l: { slug: string }) => l.slug === lessonSlug);
@@ -108,129 +114,159 @@ export default async function LessonPlayerPage({
     (id: Types.ObjectId) => String(id) === String(lesson!._id)
   );
 
+  const completedSet = new Set(
+    (enrollment?.completedLessonIds || []).map((id: Types.ObjectId) => String(id))
+  );
+
+  const gate =
+    enrollment &&
+    (await evaluateLessonGate(
+      session.sub,
+      String(course._id),
+      String(chapter._id),
+      String(lesson._id)
+    ));
+
+  const nextHref = next ? `/learn/${slug}/${next.slug}` : null;
+  const prevHref = prev ? `/learn/${slug}/${prev.slug}` : null;
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[240px_1fr]">
-      <aside className="space-y-2">
-        <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
-          ← {course.title}
-        </Link>
-        <nav className="mt-4 space-y-1">
-          {allLessons.map((l: { slug: string; title: string }) => (
-            <Link
-              key={l.slug}
-              href={`/learn/${slug}/${l.slug}`}
-              className={`block rounded-lg px-3 py-2 text-sm ${
-                l.slug === lessonSlug
-                  ? "bg-blue-50 font-medium text-blue-900"
-                  : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
-              {l.title}
-            </Link>
-          ))}
-        </nav>
-        {enrollment && (
-          <p className="pt-4 text-xs text-stone-500">Progress {enrollment.progressPercent}%</p>
-        )}
-      </aside>
+    <LessonEngagementProvider
+      courseId={String(course._id)}
+      chapterId={String(chapter._id)}
+      lessonId={String(lesson._id)}
+      completed={!!completed}
+      initialGate={gate || null}
+    >
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[240px_1fr]">
+        <aside className="space-y-2">
+          <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
+            ← {course.title}
+          </Link>
+          <nav className="mt-4 space-y-1">
+            {allLessons.map((l: { slug: string; title: string; id: string }) => {
+              const done = completedSet.has(l.id);
+              return (
+                <Link
+                  key={l.slug}
+                  href={`/learn/${slug}/${l.slug}`}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                    l.slug === lessonSlug
+                      ? "bg-blue-50 font-medium text-blue-900"
+                      : "text-stone-600 hover:bg-stone-100"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate">{l.title}</span>
+                  {done && <span className="text-emerald-600">✓</span>}
+                </Link>
+              );
+            })}
+          </nav>
+          {enrollment && (
+            <p className="pt-4 text-xs text-stone-500">Progress {enrollment.progressPercent}%</p>
+          )}
+        </aside>
 
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm text-stone-500">{chapter.title}</p>
-          <h1 className="font-serif text-3xl text-stone-900">{lesson.title}</h1>
-        </div>
-
-        {chapter.isScorm ? (
-          <ScormPlayer
-            courseId={String(course._id)}
-            chapterId={String(chapter._id)}
-            launchPath={chapter.scormLaunchPath || chapter.scormPackageUrl || ""}
-          />
-        ) : (
-          <>
-            {lesson.videoUrl && (
-              <Card>
-                <CardContent className="p-4">
-                  <VideoEmbed url={lesson.videoUrl} />
-                </CardContent>
-              </Card>
-            )}
-            {lesson.pdfUrl && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">PDF resource</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a
-                    href={lesson.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-700 hover:underline"
-                  >
-                    Open PDF
-                  </a>
-                </CardContent>
-              </Card>
-            )}
-            {lesson.contentHtml && (
-              <div
-                className="prose-lesson rounded-2xl border border-stone-200 bg-white p-6"
-                dangerouslySetInnerHTML={{ __html: lesson.contentHtml }}
-              />
-            )}
-          </>
-        )}
-
-        {quiz && (
-          <QuizPlayer
-            quiz={JSON.parse(JSON.stringify(quiz))}
-            courseId={String(course._id)}
-            lessonId={String(lesson._id)}
-          />
-        )}
-
-        {assignment && (
-          <AssignmentSubmit
-            assignment={JSON.parse(JSON.stringify(assignment))}
-            courseId={String(course._id)}
-            lessonId={String(lesson._id)}
-          />
-        )}
-
-        {exercise && (
-          <ExercisePlayer exercise={JSON.parse(JSON.stringify(exercise))} />
-        )}
-
-        <DiscussionPanel
-          courseId={String(course._id)}
-          lessonId={String(lesson._id)}
-          threads={JSON.parse(JSON.stringify(threads))}
-        />
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
-          <div className="flex gap-2">
-            {prev && (
-              <Link href={`/learn/${slug}/${prev.slug}`}>
-                <Button variant="outline">Previous</Button>
-              </Link>
-            )}
-            {next && (
-              <Link href={`/learn/${slug}/${next.slug}`}>
-                <Button variant="outline">Next</Button>
-              </Link>
-            )}
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm text-stone-500">{chapter.title}</p>
+            <h1 className="font-serif text-3xl text-stone-900">{lesson.title}</h1>
           </div>
-          {enrollment && !chapter.isScorm && (
-            <CompleteLessonButton
+
+          {chapter.isScorm ? (
+            <ScormPlayer
               courseId={String(course._id)}
               chapterId={String(chapter._id)}
-              lessonId={String(lesson._id)}
+              launchPath={chapter.scormLaunchPath || chapter.scormPackageUrl || ""}
               completed={!!completed}
             />
+          ) : (
+            <>
+              {lesson.videoUrl && (
+                <Card>
+                  <CardContent className="p-4">
+                    <VideoEmbed url={lesson.videoUrl} />
+                  </CardContent>
+                </Card>
+              )}
+              {(lesson.pdfUrl || lesson.contentHtml) && (
+                <ReadingTracker>
+                  {lesson.pdfUrl && (
+                    <Card className="mb-4">
+                      <CardHeader>
+                        <CardTitle className="text-base">PDF resource</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <a
+                          href={lesson.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-700 hover:underline"
+                        >
+                          Open PDF
+                        </a>
+                        <iframe
+                          src={lesson.pdfUrl}
+                          className="mt-3 h-[480px] w-full rounded-xl border border-stone-200"
+                          title="PDF"
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+                  {lesson.contentHtml && (
+                    <div
+                      className="prose-lesson rounded-2xl border border-stone-200 bg-white p-6"
+                      dangerouslySetInnerHTML={{ __html: lesson.contentHtml }}
+                    />
+                  )}
+                </ReadingTracker>
+              )}
+            </>
           )}
+
+          {quiz && (
+            <QuizPlayer
+              quiz={JSON.parse(JSON.stringify(quiz))}
+              courseId={String(course._id)}
+              lessonId={String(lesson._id)}
+            />
+          )}
+
+          {assignment && (
+            <AssignmentSubmit
+              assignment={JSON.parse(JSON.stringify(assignment))}
+              courseId={String(course._id)}
+              lessonId={String(lesson._id)}
+            />
+          )}
+
+          {exercise && (
+            <ExercisePlayer exercise={JSON.parse(JSON.stringify(exercise))} />
+          )}
+
+          <DiscussionPanel
+            courseId={String(course._id)}
+            lessonId={String(lesson._id)}
+            threads={JSON.parse(JSON.stringify(threads))}
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
+            <LessonNavButtons
+              prevHref={prevHref}
+              nextHref={nextHref}
+              completed={!!completed}
+            />
+            {enrollment && !chapter.isScorm && (
+              <CompleteLessonButton
+                courseId={String(course._id)}
+                chapterId={String(chapter._id)}
+                lessonId={String(lesson._id)}
+                completed={!!completed}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </LessonEngagementProvider>
   );
 }
-

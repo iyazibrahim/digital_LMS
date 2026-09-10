@@ -26,10 +26,22 @@ export async function markLessonComplete(
   userId: string,
   courseId: string,
   chapterId: string,
-  lessonId: string
+  lessonId: string,
+  options?: { skipGate?: boolean }
 ) {
   const course = await Course.findById(courseId);
   if (!course) throw new Error("Course not found");
+
+  if (!options?.skipGate) {
+    const { evaluateLessonGate } = await import("@/lib/lesson-criteria");
+    const gate = await evaluateLessonGate(userId, courseId, chapterId, lessonId);
+    if (!gate.ready) {
+      const err = new Error(gate.reasons[0] || "Lesson requirements not met");
+      (err as Error & { status: number; reasons: string[] }).status = 400;
+      (err as Error & { status: number; reasons: string[] }).reasons = gate.reasons;
+      throw err;
+    }
+  }
 
   let enrollment = await Enrollment.findOne({ userId, courseId });
   if (!enrollment) {
@@ -60,6 +72,10 @@ export async function markLessonComplete(
       completed: true,
       completedAt: new Date(),
       videoWatchSeconds: 0,
+      watchedSeconds: 0,
+      durationSeconds: 0,
+      readDwellSeconds: 0,
+      reachedEnd: false,
     });
   }
 

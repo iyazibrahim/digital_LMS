@@ -147,7 +147,7 @@ export interface IEvaluationRequest {
   courseId?: Types.ObjectId;
   batchId?: Types.ObjectId;
   slotId?: Types.ObjectId;
-  status: "pending" | "scheduled" | "passed" | "failed";
+  status: "pending" | "scheduled" | "passed" | "failed" | "cancelled";
   notes?: string;
   evaluatedBy?: Types.ObjectId;
   evaluatedAt?: Date;
@@ -161,7 +161,7 @@ const EvaluationRequestSchema = new Schema<IEvaluationRequest>(
     slotId: { type: Schema.Types.ObjectId, ref: "EvaluatorSlot" },
     status: {
       type: String,
-      enum: ["pending", "scheduled", "passed", "failed"],
+      enum: ["pending", "scheduled", "passed", "failed", "cancelled"],
       default: "pending",
     },
     notes: String,

@@ -3,13 +3,38 @@ import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { requireSession, jsonError } from "@/lib/auth";
 import { Role, ROLES } from "@/lib/constants";
+import { parsePageParams } from "@/lib/paginate";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await requireSession(["admin", "instructor"]);
     await connectDB();
-    const users = await User.find().select("-passwordHash").sort({ createdAt: -1 }).lean();
-    return NextResponse.json({ users });
+    const { searchParams } = new URL(req.url);
+    const { page, pageSize, skip } = parsePageParams(searchParams);
+    const q = (searchParams.get("q") || "").trim();
+    const filter: Record<string, unknown> = {};
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
+      ];
+    }
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-passwordHash")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
+    return NextResponse.json({
+      users,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
   } catch (err) {
     return jsonError(err);
   }

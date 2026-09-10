@@ -32,6 +32,7 @@ export interface IUser {
   preferredFunctions: string[];
   preferredIndustries: string[];
   isActive: boolean;
+  mustChangePassword: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -74,6 +75,7 @@ const UserSchema = new Schema<IUser>(
     preferredFunctions: { type: [String], default: [] },
     preferredIndustries: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },
+    mustChangePassword: { type: Boolean, default: false },
     lastLoginAt: Date,
   },
   { timestamps: true }

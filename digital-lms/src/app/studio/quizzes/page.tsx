@@ -5,12 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 import { DeleteResourceButton } from "@/components/studio/delete-resource-button";
+import { StudioPagination } from "@/components/studio/pagination";
+import { paginateQuery } from "@/lib/paginate";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudioQuizzesPage() {
+export default async function StudioQuizzesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
   await connectDB();
-  const quizzes = await Quiz.find().sort({ updatedAt: -1 }).lean();
+  const { items: quizzes, total, totalPages } = await paginateQuery<{
+    _id: unknown;
+    title: string;
+    questions?: unknown[];
+    enableProctoring?: boolean;
+    updatedAt?: Date;
+  }>(Quiz, {}, {
+    page,
+    pageSize: 20,
+    sort: { updatedAt: -1 },
+  });
 
   return (
     <div className="space-y-6">
@@ -70,6 +88,7 @@ export default async function StudioQuizzesPage() {
           </tbody>
         </table>
       </div>
+      <StudioPagination page={page} totalPages={totalPages} total={total} basePath="/studio/quizzes" />
     </div>
   );
 }

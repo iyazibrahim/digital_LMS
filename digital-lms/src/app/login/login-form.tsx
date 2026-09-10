@@ -33,6 +33,10 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
       if (data.accessToken && data.refreshToken) {
         persistAuthTokens(data.accessToken, data.refreshToken);
       }
+      if (data.mustChangePassword || data.user?.mustChangePassword) {
+        window.location.href = `/profile?forcePassword=1&next=${encodeURIComponent(defaultNext || "/")}`;
+        return;
+      }
       // Hard navigation so RSC picks up cookies / tokens
       window.location.href = defaultNext || "/";
     } catch {

@@ -1,5 +1,7 @@
 import { Schema, models, model, Types } from "mongoose";
 
+export type ExerciseKind = "coding" | "short_answer" | "written" | "file";
+
 export interface ITestCase {
   input: string;
   expectedOutput: string;
@@ -10,9 +12,12 @@ export interface IProgrammingExercise {
   _id: Types.ObjectId;
   title: string;
   description?: string;
+  kind: ExerciseKind;
   language: string;
   starterCode?: string;
   testCases: ITestCase[];
+  /** For short_answer — accepted answers (case-insensitive trim) */
+  expectedAnswers?: string[];
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -31,9 +36,15 @@ const ProgrammingExerciseSchema = new Schema<IProgrammingExercise>(
   {
     title: { type: String, required: true },
     description: String,
+    kind: {
+      type: String,
+      enum: ["coding", "short_answer", "written", "file"],
+      default: "coding",
+    },
     language: { type: String, default: "python" },
     starterCode: String,
     testCases: { type: [TestCaseSchema], default: [] },
+    expectedAnswers: { type: [String], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
@@ -49,6 +60,8 @@ export interface IProgrammingSubmission {
   userId: Types.ObjectId;
   code: string;
   language: string;
+  answerText?: string;
+  fileUrl?: string;
   passed: boolean;
   results: { input: string; expected: string; actual: string; passed: boolean }[];
   createdAt: Date;
@@ -62,8 +75,10 @@ const ProgrammingSubmissionSchema = new Schema<IProgrammingSubmission>(
       required: true,
     },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    code: { type: String, required: true },
-    language: { type: String, required: true },
+    code: { type: String, default: "" },
+    language: { type: String, default: "text" },
+    answerText: String,
+    fileUrl: String,
     passed: { type: Boolean, default: false },
     results: {
       type: [

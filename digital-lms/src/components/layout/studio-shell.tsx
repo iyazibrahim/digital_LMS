@@ -17,7 +17,7 @@ const links = [
   { href: "/studio/batches", label: "Batches" },
   { href: "/studio/certificates", label: "Certificates" },
   { href: "/studio/programs", label: "Programs" },
-  { href: "/studio/jobs", label: "Jobs" },
+  { href: "/studio/bulletin", label: "Bulletin" },
   { href: "/studio/users", label: "Users" },
   { href: "/studio/analytics", label: "Analytics" },
   { href: "/studio/evaluations", label: "Evaluations" },

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, Select } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/card";
+import { ClientPagination } from "@/components/studio/pagination";
 import { formatDateTime } from "@/lib/utils";
 
 type Slot = {
@@ -14,6 +15,8 @@ type Slot = {
   isBooked: boolean;
   notes?: string;
   evaluatorId?: { name: string };
+  courseId?: { title: string };
+  bookedBy?: { name: string; email: string };
 };
 
 type RequestRow = {
@@ -22,29 +25,52 @@ type RequestRow = {
   notes?: string;
   userId?: { name: string; email: string };
   courseId?: { title: string };
+  slotId?: { startAt: string; endAt: string };
 };
+
+type CourseOpt = { _id: string; title: string };
 
 export default function StudioEvaluationsPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
+  const [courses, setCourses] = useState<CourseOpt[]>([]);
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [notes, setNotes] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [slotPage, setSlotPage] = useState(1);
+  const [reqPage, setReqPage] = useState(1);
+  const [slotTotal, setSlotTotal] = useState(0);
+  const [reqTotal, setReqTotal] = useState(0);
+  const [slotPages, setSlotPages] = useState(1);
+  const [reqPages, setReqPages] = useState(1);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function load() {
-    const [s, r] = await Promise.all([
-      fetch("/api/evaluations?type=slots").then((res) => res.json()),
-      fetch("/api/evaluations?type=requests").then((res) => res.json()),
+  async function load(sp = slotPage, rp = reqPage) {
+    const [s, r, c] = await Promise.all([
+      fetch(`/api/evaluations?type=slots&page=${sp}&pageSize=10`).then((res) => res.json()),
+      fetch(`/api/evaluations?type=requests&page=${rp}&pageSize=10`).then((res) => res.json()),
+      fetch("/api/courses").then((res) => res.json()).catch(() => ({ courses: [] })),
     ]);
-    if (s.slots) setSlots(s.slots);
-    if (r.requests) setRequests(r.requests);
+    if (s.slots) {
+      setSlots(s.slots);
+      setSlotTotal(s.total || 0);
+      setSlotPages(s.totalPages || 1);
+      setSlotPage(s.page || sp);
+    }
+    if (r.requests) {
+      setRequests(r.requests);
+      setReqTotal(r.total || 0);
+      setReqPages(r.totalPages || 1);
+      setReqPage(r.page || rp);
+    }
+    if (c.courses) setCourses(c.courses.map((x: CourseOpt) => ({ _id: x._id, title: x.title })));
   }
 
   useEffect(() => {
     void load();
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function addSlot(e: React.FormEvent) {
@@ -54,34 +80,42 @@ export default function StudioEvaluationsPage() {
     const res = await fetch("/api/evaluations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ startAt, endAt, notes }),
+      body: JSON.stringify({ startAt, endAt, notes, courseId: courseId || undefined }),
     });
     const data = await res.json();
     if (!res.ok) {
       setError(data.error || "Failed");
       return;
     }
-    setMessage("Slot created");
+    setMessage("Slot published");
     setStartAt("");
     setEndAt("");
     setNotes("");
-    load();
+    setCourseId("");
+    load(1, reqPage);
   }
 
   async function updateRequest(requestId: string, status: string) {
+    setError("");
     const res = await fetch("/api/evaluations", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId, status }),
     });
-    if (res.ok) load();
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Update failed");
+      return;
+    }
+    setMessage(`Marked ${status}`);
+    load(slotPage, reqPage);
   }
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="font-serif text-3xl text-blue-950">Evaluations</h1>
-        <p className="text-stone-600">Evaluator slots and learner requests.</p>
+        <p className="text-stone-600">Publish booking slots and grade learner evaluations.</p>
       </div>
       {message && <p className="text-sm text-blue-800">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -89,7 +123,7 @@ export default function StudioEvaluationsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Slots</CardTitle>
+            <CardTitle className="font-serif">Available slots</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <ul className="space-y-2 text-sm">
@@ -102,14 +136,25 @@ export default function StudioEvaluationsPage() {
                     <p>
                       {formatDateTime(s.startAt)} – {formatDateTime(s.endAt)}
                     </p>
-                    <p className="text-stone-500">{s.evaluatorId?.name}</p>
+                    <p className="text-stone-500">
+                      {s.evaluatorId?.name}
+                      {s.courseId?.title ? ` · ${s.courseId.title}` : ""}
+                      {s.bookedBy?.name ? ` · booked by ${s.bookedBy.name}` : ""}
+                    </p>
                   </div>
                   <Badge variant={s.isBooked ? "warning" : "success"}>
                     {s.isBooked ? "Booked" : "Open"}
                   </Badge>
                 </li>
               ))}
+              {!slots.length && <p className="text-stone-500">No slots yet.</p>}
             </ul>
+            <ClientPagination
+              page={slotPage}
+              totalPages={slotPages}
+              total={slotTotal}
+              onPage={(p) => load(p, reqPage)}
+            />
             <form onSubmit={addSlot} className="space-y-2 border-t border-stone-100 pt-4">
               <div className="space-y-2">
                 <Label>Start</Label>
@@ -129,13 +174,24 @@ export default function StudioEvaluationsPage() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Course (optional)</Label>
+                <Select value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+                  <option value="">General</option>
+                  {courses.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </Select>
+              </div>
               <Textarea
-                placeholder="Notes"
+                placeholder="Notes (meeting link, location…)"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
               <Button type="submit" size="sm">
-                Add slot
+                Publish slot
               </Button>
             </form>
           </CardContent>
@@ -143,7 +199,7 @@ export default function StudioEvaluationsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Requests</CardTitle>
+            <CardTitle className="font-serif">Bookings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {requests.map((r) => (
@@ -152,6 +208,9 @@ export default function StudioEvaluationsPage() {
                   <div>
                     <p className="font-medium">{r.userId?.name}</p>
                     <p className="text-stone-500">{r.courseId?.title || "General"}</p>
+                    {r.slotId?.startAt && (
+                      <p className="text-xs text-stone-400">{formatDateTime(r.slotId.startAt)}</p>
+                    )}
                   </div>
                   <Badge>{r.status}</Badge>
                 </div>
@@ -165,11 +224,18 @@ export default function StudioEvaluationsPage() {
                     <option value="scheduled">scheduled</option>
                     <option value="passed">passed</option>
                     <option value="failed">failed</option>
+                    <option value="cancelled">cancelled</option>
                   </Select>
                 </div>
               </div>
             ))}
-            {!requests.length && <p className="text-stone-500">No requests yet.</p>}
+            {!requests.length && <p className="text-stone-500">No bookings yet.</p>}
+            <ClientPagination
+              page={reqPage}
+              totalPages={reqPages}
+              total={reqTotal}
+              onPage={(p) => load(slotPage, p)}
+            />
           </CardContent>
         </Card>
       </div>

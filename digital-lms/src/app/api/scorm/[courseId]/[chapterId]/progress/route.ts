@@ -4,8 +4,8 @@ import { connectDB } from "@/lib/db";
 import { Course } from "@/models/Course";
 import { Enrollment } from "@/models/Enrollment";
 import { requireSession, jsonError } from "@/lib/auth";
-import { countLessons, awardCourseBadges, issueCertificate } from "@/lib/progress";
-import { percent } from "@/lib/utils";
+import { markLessonComplete } from "@/lib/progress";
+import { evaluateLessonGate } from "@/lib/lesson-criteria";
 
 export async function POST(
   req: NextRequest,
@@ -28,8 +28,6 @@ export async function POST(
       });
     }
 
-    const lessonId = chapterId; // SCORM chapter uses chapter id as progress key
-    void lessonId;
     const lp = enrollment.lessonProgress.find(
       (p: { lessonId: { toString(): string } }) => String(p.lessonId) === chapterId
     );
@@ -37,40 +35,41 @@ export async function POST(
       enrollment.lessonProgress.push({
         lessonId: new Types.ObjectId(chapterId),
         chapterId: new Types.ObjectId(chapterId),
-        completed: !!body.completed,
-        completedAt: body.completed ? new Date() : undefined,
+        completed: false,
         videoWatchSeconds: 0,
+        watchedSeconds: 0,
+        durationSeconds: 0,
+        readDwellSeconds: 0,
+        reachedEnd: false,
         scormData: body.scormData || {},
       });
     } else {
       lp.scormData = body.scormData || lp.scormData;
-      if (body.completed) {
-        lp.completed = true;
-        lp.completedAt = new Date();
-      }
-    }
-
-    if (
-      body.completed &&
-      !enrollment.completedLessonIds.some(
-        (id: { toString(): string }) => String(id) === chapterId
-      )
-    ) {
-      enrollment.completedLessonIds.push(new Types.ObjectId(chapterId));
-    }
-
-    const total = countLessons(course);
-    enrollment.progressPercent = percent(enrollment.completedLessonIds.length, total);
-    if (total > 0 && enrollment.completedLessonIds.length >= total) {
-      enrollment.completed = true;
-      enrollment.completedAt = new Date();
-      if (course.enableCertification && !enrollment.certificateId) {
-        const cert = await issueCertificate(session.sub, courseId);
-        enrollment.certificateId = cert._id;
-      }
-      await awardCourseBadges(session.sub, courseId);
     }
     await enrollment.save();
+
+    if (body.completed) {
+      const gate = await evaluateLessonGate(session.sub, courseId, chapterId, chapterId);
+      if (!gate.ready) {
+        return NextResponse.json(
+          { error: gate.reasons[0] || "Requirements not met", reasons: gate.reasons, enrollment },
+          { status: 400 }
+        );
+      }
+      try {
+        enrollment = await markLessonComplete(session.sub, courseId, chapterId, chapterId);
+      } catch (e) {
+        const err = e as Error & { status?: number; reasons?: string[] };
+        if (err.status === 400) {
+          return NextResponse.json(
+            { error: err.message, reasons: err.reasons },
+            { status: 400 }
+          );
+        }
+        throw e;
+      }
+    }
+
     return NextResponse.json(enrollment);
   } catch (err) {
     return jsonError(err);

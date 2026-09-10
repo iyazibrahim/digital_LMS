@@ -14,9 +14,14 @@ export interface ISettings {
   stripeSecretKey?: string;
   stripeWebhookSecret?: string;
   enablePayments: boolean;
-  enableJobBoard: boolean;
+  /** @deprecated migrated to enableBulletin */
+  enableJobBoard?: boolean;
+  enableBulletin: boolean;
   enablePrograms: boolean;
   enableDiscussions: boolean;
+  minWatchPercent: number;
+  minReadSeconds: number;
+  minScormSeconds: number;
   defaultCertificateHtml: string;
 }
 
@@ -39,8 +44,12 @@ const SettingsSchema = new Schema<ISettings>(
     stripeWebhookSecret: String,
     enablePayments: { type: Boolean, default: false },
     enableJobBoard: { type: Boolean, default: true },
+    enableBulletin: { type: Boolean, default: true },
     enablePrograms: { type: Boolean, default: true },
     enableDiscussions: { type: Boolean, default: true },
+    minWatchPercent: { type: Number, default: 80 },
+    minReadSeconds: { type: Number, default: 20 },
+    minScormSeconds: { type: Number, default: 30 },
     defaultCertificateHtml: {
       type: String,
       default: `<div style="border:8px solid #1D4ED8;padding:48px;text-align:center;font-family:Georgia,serif">
@@ -63,5 +72,49 @@ export async function getSettings() {
   if (!doc) {
     doc = await Settings.create({});
   }
+  // Migrate legacy enableJobBoard → enableBulletin once
+  if (doc.enableBulletin === undefined || doc.enableBulletin === null) {
+    doc.enableBulletin = doc.enableJobBoard !== false;
+    await doc.save();
+  }
   return doc;
+}
+
+export function publicSettings(settings: ISettings) {
+  return {
+    siteName: settings.siteName,
+    tagline: settings.tagline,
+    logoUrl: settings.logoUrl,
+    allowGuestAccess: settings.allowGuestAccess,
+    allowSignup: settings.allowSignup,
+    primaryColor: settings.primaryColor,
+    enablePayments: settings.enablePayments,
+    enableBulletin: settings.enableBulletin ?? settings.enableJobBoard !== false,
+    enablePrograms: settings.enablePrograms,
+    enableDiscussions: settings.enableDiscussions,
+    minWatchPercent: settings.minWatchPercent ?? 80,
+    minReadSeconds: settings.minReadSeconds ?? 20,
+    minScormSeconds: settings.minScormSeconds ?? 30,
+    stripePublishableKey:
+      settings.stripePublishableKey || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  };
+}
+
+export function adminSettingsView(settings: ISettings) {
+  const mask = (v?: string) => (v ? "••••••••" : "");
+  return {
+    ...publicSettings(settings),
+    zoomAccountId: settings.zoomAccountId || "",
+    zoomClientId: settings.zoomClientId || "",
+    zoomClientSecret: settings.zoomClientSecret ? mask(settings.zoomClientSecret) : "",
+    stripePublishableKey: settings.stripePublishableKey || "",
+    stripeSecretKey: settings.stripeSecretKey ? mask(settings.stripeSecretKey) : "",
+    stripeWebhookSecret: settings.stripeWebhookSecret
+      ? mask(settings.stripeWebhookSecret)
+      : "",
+    defaultCertificateHtml: settings.defaultCertificateHtml,
+    _hasZoomSecret: !!settings.zoomClientSecret,
+    _hasStripeSecret: !!settings.stripeSecretKey,
+    _hasStripeWebhook: !!settings.stripeWebhookSecret,
+  };
 }

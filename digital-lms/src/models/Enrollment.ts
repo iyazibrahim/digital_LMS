@@ -5,7 +5,13 @@ export interface ILessonProgress {
   chapterId: Types.ObjectId;
   completed: boolean;
   completedAt?: Date;
+  /** @deprecated use watchedSeconds */
   videoWatchSeconds: number;
+  watchedSeconds: number;
+  durationSeconds: number;
+  readDwellSeconds: number;
+  reachedEnd: boolean;
+  lastHeartbeatAt?: Date;
   scormData?: Record<string, unknown>;
 }
 
@@ -31,6 +37,11 @@ const LessonProgressSchema = new Schema<ILessonProgress>(
     completed: { type: Boolean, default: false },
     completedAt: Date,
     videoWatchSeconds: { type: Number, default: 0 },
+    watchedSeconds: { type: Number, default: 0 },
+    durationSeconds: { type: Number, default: 0 },
+    readDwellSeconds: { type: Number, default: 0 },
+    reachedEnd: { type: Boolean, default: false },
+    lastHeartbeatAt: Date,
     scormData: Schema.Types.Mixed,
   },
   { _id: false }

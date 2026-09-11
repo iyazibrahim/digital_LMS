@@ -119,7 +119,11 @@
 - Public CTAs hidden when `allowSignup` is false (home, header Get started, login Register). `/register` shows a closed message; API still returns 403.
 - Studio Users: admin **Create user** form (name, email, roles). Generates a temporary password (`mustChangePassword`) with copy banner. POST `/api/users` is admin-only.
 - Build: `npm run build` passed.
-- Lint: passed (existing warnings only).
+### 2026-09-11 — Create user modal with copy-before-close
+
+- Studio Users: **Create user** opens a modal form instead of an inline card.
+- After create, the generated password is shown in the same modal. Overlay, Escape, X, and Done stay locked until the admin copies it (clipboard fallback checkbox if copy is blocked).
+
 
 
 

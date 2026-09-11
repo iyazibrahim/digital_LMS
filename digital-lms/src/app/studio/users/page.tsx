@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientPagination } from "@/components/studio/pagination";
+import { StudioModal } from "@/components/studio/modal";
 import { ROLES, Role } from "@/lib/constants";
 
 type UserRow = {
@@ -28,11 +29,20 @@ export default function StudioUsersPage() {
   const [tempPass, setTempPass] = useState<{ name: string; email?: string; password: string } | null>(
     null
   );
-  const [copied, setCopied] = useState(false);
+  const [resetCopied, setResetCopied] = useState(false);
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [creating, setCreating] = useState(false);
   const [allowSignup, setAllowSignup] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [created, setCreated] = useState<{ name: string; email?: string; password: string } | null>(
+    null
+  );
+  const [createdCopied, setCreatedCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+
+  const canCloseCreate = !created || createdCopied;
 
   async function load(query = q, p = page) {
     const sp = new URLSearchParams();
@@ -67,6 +77,30 @@ export default function StudioUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!created) return;
+    document.getElementById("copy-created-password")?.focus();
+  }, [created]);
+
+  function openCreate() {
+    setCreateForm(emptyCreate);
+    setCreated(null);
+    setCreatedCopied(false);
+    setCopyFailed(false);
+    setCreateError("");
+    setCreateOpen(true);
+  }
+
+  function closeCreate() {
+    if (!canCloseCreate) return;
+    setCreateOpen(false);
+    setCreated(null);
+    setCreateForm(emptyCreate);
+    setCreatedCopied(false);
+    setCopyFailed(false);
+    setCreateError("");
+  }
+
   function toggleCreateRole(role: Role) {
     setCreateForm((prev) => {
       const roles = prev.roles.includes(role)
@@ -78,11 +112,11 @@ export default function StudioUsersPage() {
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
+    setCreateError("");
     setError("");
     setMessage("");
-    setCopied(false);
     if (!createForm.roles.length) {
-      setError("Choose at least one role");
+      setCreateError("Choose at least one role");
       return;
     }
     setCreating(true);
@@ -95,18 +129,38 @@ export default function StudioUsersPage() {
     const data = await res.json();
     setCreating(false);
     if (!res.ok) {
-      setError(data.error || "Could not create user");
+      setCreateError(data.error || "Could not create user");
       return;
     }
-    setCreateForm(emptyCreate);
-    setTempPass({
+    setCreated({
       name: data.user?.name || createForm.name,
       email: data.user?.email,
       password: data.temporaryPassword,
     });
+    setCreatedCopied(false);
+    setCopyFailed(false);
     setMessage(`Created ${data.user?.name || "user"}`);
     setQ("");
     await load("", 1);
+  }
+
+  async function copyCreatedPassword() {
+    if (!created) return;
+    try {
+      await navigator.clipboard.writeText(created.password);
+      setCreatedCopied(true);
+      setCopyFailed(false);
+    } catch {
+      setCopyFailed(true);
+      const el = document.getElementById("created-temp-password");
+      if (el) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
   }
 
   async function toggleRole(user: UserRow, role: Role) {
@@ -160,7 +214,7 @@ export default function StudioUsersPage() {
     if (!confirm(`Reset password for ${user.name}?`)) return;
     setError("");
     setMessage("");
-    setCopied(false);
+    setResetCopied(false);
     const res = await fetch(`/api/users/${user._id}/reset-password`, {
       method: "POST",
       credentials: "same-origin",
@@ -174,11 +228,11 @@ export default function StudioUsersPage() {
     setMessage(`Temporary password created for ${user.name}`);
   }
 
-  async function copyTemp() {
+  async function copyResetTemp() {
     if (!tempPass) return;
     try {
       await navigator.clipboard.writeText(tempPass.password);
-      setCopied(true);
+      setResetCopied(true);
     } catch {
       setError("Could not copy — select and copy manually");
     }
@@ -186,72 +240,24 @@ export default function StudioUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl text-blue-950">Users</h1>
-        <p className="text-stone-600">
-          Create accounts, search learners, change roles, reset passwords, and activate accounts.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl text-blue-950">Users</h1>
+          <p className="text-stone-600">
+            Create accounts, search learners, change roles, reset passwords, and activate accounts.
+          </p>
+        </div>
+        {isAdmin && (
+          <Button type="button" onClick={openCreate}>
+            Create user
+          </Button>
+        )}
       </div>
 
       {!allowSignup && isAdmin && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           Public sign-up is disabled in Settings. New accounts can only be created here.
         </p>
-      )}
-
-      {isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-xl">Create user</CardTitle>
-          </CardHeader>
-        <CardContent>
-          <form onSubmit={createUser} className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="create-name">Full name</Label>
-              <Input
-                id="create-name"
-                required
-                minLength={2}
-                value={createForm.name}
-                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="create-email">Email</Label>
-              <Input
-                id="create-email"
-                type="email"
-                required
-                value={createForm.email}
-                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Roles</Label>
-              <div className="flex flex-wrap gap-3">
-                {ROLES.map((role) => (
-                  <label key={role} className="inline-flex items-center gap-1.5 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={createForm.roles.includes(role)}
-                      onChange={() => toggleCreateRole(role)}
-                    />
-                    {role}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="md:col-span-2">
-              <Button type="submit" disabled={creating}>
-                {creating ? "Creating…" : "Create user"}
-              </Button>
-              <p className="mt-2 text-xs text-stone-500">
-                A temporary password is generated. The user must change it on first login.
-              </p>
-            </div>
-          </form>
-        </CardContent>
-        </Card>
       )}
 
       <form
@@ -285,8 +291,8 @@ export default function StudioUsersPage() {
             <code className="rounded-lg bg-white px-3 py-2 font-mono text-sm tracking-wide">
               {tempPass.password}
             </code>
-            <Button type="button" size="sm" onClick={copyTemp}>
-              {copied ? "Copied" : "Copy"}
+            <Button type="button" size="sm" onClick={copyResetTemp}>
+              {resetCopied ? "Copied" : "Copy"}
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => setTempPass(null)}>
               Dismiss
@@ -365,6 +371,118 @@ export default function StudioUsersPage() {
           load(q, p);
         }}
       />
+
+      <StudioModal
+        open={createOpen}
+        title={created ? "Account created" : "Create user"}
+        description={
+          created
+            ? "Copy the temporary password before closing. It will not be shown again."
+            : "Add a learner or staff account. A temporary password is generated after you create."
+        }
+        onClose={closeCreate}
+        canClose={canCloseCreate}
+        closeBlockedHint="Copy the temporary password before closing"
+      >
+        {created ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="font-medium text-amber-950">{created.name}</p>
+              {created.email && <p className="text-sm text-amber-900">{created.email}</p>}
+              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-amber-800">
+                Temporary password
+              </p>
+              <code
+                id="created-temp-password"
+                className="mt-1 block select-all rounded-xl bg-white px-3 py-3 font-mono text-lg tracking-wide text-stone-900"
+              >
+                {created.password}
+              </code>
+            </div>
+            {!createdCopied && (
+              <p className="text-sm text-amber-900">
+                You must copy this password before you can close this window.
+              </p>
+            )}
+            {copyFailed && (
+              <label className="flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={createdCopied}
+                  onChange={(e) => setCreatedCopied(e.target.checked)}
+                />
+                Clipboard was blocked. I have copied this password myself.
+              </label>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" id="copy-created-password" onClick={copyCreatedPassword}>
+                {createdCopied && !copyFailed ? "Copied" : "Copy password"}
+              </Button>
+              <Button type="button" variant="outline" disabled={!createdCopied} onClick={closeCreate}>
+                {createdCopied ? "Done" : "Copy to close"}
+              </Button>
+            </div>
+            <p className="text-xs text-stone-500">The user must change this password on first login.</p>
+          </div>
+        ) : (
+          <form onSubmit={createUser} className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="create-name">Full name</Label>
+              <Input
+                id="create-name"
+                required
+                minLength={2}
+                autoComplete="name"
+                value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="create-email">Email</Label>
+              <Input
+                id="create-email"
+                type="email"
+                required
+                autoComplete="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Roles</Label>
+              <div className="flex flex-wrap gap-2">
+                {ROLES.map((role) => {
+                  const on = createForm.roles.includes(role);
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => toggleCreateRole(role)}
+                      className={
+                        on
+                          ? "rounded-full border border-blue-700 bg-blue-700 px-3 py-1.5 text-xs font-medium text-white"
+                          : "rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-blue-300"
+                      }
+                    >
+                      {role}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {createError && <p className="text-sm text-red-600">{createError}</p>}
+            <div className="flex flex-wrap justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={closeCreate}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={creating}>
+                {creating ? "Creating…" : "Create user"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </StudioModal>
     </div>
   );
 }

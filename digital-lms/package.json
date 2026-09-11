@@ -21,7 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.4.2",
     "isomorphic-dompurify": "^3.19.0",
     "jose": "^6.2.12",
     "lucide-react": "^1.43.0",

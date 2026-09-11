@@ -5,7 +5,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string }) {
+
+export default function LoginForm({
+  defaultNext = "/",
+  allowSignup = true,
+}: {
+  defaultNext?: string;
+  allowSignup?: boolean;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -84,12 +91,18 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
             <p className="mt-1">Admin: admin@digitalpenang.my / admin123</p>
             <p>Student: student@digitalpenang.my / student123</p>
           </div>
-          <p className="mt-4 text-center text-sm text-stone-500">
-            No account?{" "}
-            <Link href="/register" className="text-blue-700 hover:underline">
-              Register
-            </Link>
-          </p>
+          {allowSignup ? (
+            <p className="mt-4 text-center text-sm text-stone-500">
+              No account?{" "}
+              <Link href="/register" className="text-blue-700 hover:underline">
+                Register
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-4 text-center text-sm text-stone-500">
+              Accounts are created by an administrator.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

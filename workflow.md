@@ -113,4 +113,13 @@
 - **Ops:** Production rejects weak JWT secrets; Compose defaults `COOKIE_SECURE=1`, `SHOW_ERROR_DETAILS=0`, required JWT secrets; Dependabot + `npm audit` workflow.
 - Build: `npm run build` passed.
 
+### 2026-09-11 — Admin-only signup + create users
+
+- Studio Settings Access: clearer **Allow public sign-up** toggle with helper text linking to Users; amber notice when off.
+- Public CTAs hidden when `allowSignup` is false (home, header Get started, login Register). `/register` shows a closed message; API still returns 403.
+- Studio Users: admin **Create user** form (name, email, roles). Generates a temporary password (`mustChangePassword`) with copy banner. POST `/api/users` is admin-only.
+- Build: `npm run build` passed.
+- Lint: passed (existing warnings only).
+
+
 

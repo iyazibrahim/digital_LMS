@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, Award, Newspaper, Video, Layers } from "lucide-react";
+import { getAllowSignup } from "@/lib/public-access";
+
+export const dynamic = "force-dynamic";
 
 const pillars = [
   {
@@ -36,7 +39,9 @@ const pillars = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const allowSignup = await getAllowSignup();
+
   return (
     <div>
       <section className="relative overflow-hidden border-b border-stone-200">
@@ -57,11 +62,19 @@ export default function HomePage() {
               <Link href="/courses">
                 <Button size="lg">Browse courses</Button>
               </Link>
-              <Link href="/register">
-                <Button size="lg" variant="outline">
-                  Create free account
-                </Button>
-              </Link>
+              {allowSignup ? (
+                <Link href="/register">
+                  <Button size="lg" variant="outline">
+                    Create free account
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/login">
+                  <Button size="lg" variant="outline">
+                    Log in
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
           <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/40">

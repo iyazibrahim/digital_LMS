@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,21 +164,37 @@ export default function StudioSettingsPage() {
               <CardTitle className="font-serif">Access</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {(
-                [
-                  ["allowGuestAccess", "Allow guest browsing"],
-                  ["allowSignup", "Allow public sign-up"],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={!!settings[key]}
-                    onChange={(e) => set(key, e.target.checked)}
-                  />
-                  {label}
-                </label>
-              ))}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={!!settings.allowGuestAccess}
+                  onChange={(e) => set("allowGuestAccess", e.target.checked)}
+                />
+                Allow guest browsing
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={!!settings.allowSignup}
+                  onChange={(e) => set("allowSignup", e.target.checked)}
+                />
+                <span>
+                  Allow public sign-up
+                  <span className="mt-0.5 block text-xs font-normal text-stone-500">
+                    Uncheck to disable self-registration. New accounts can then only be created in{" "}
+                    <Link href="/studio/users" className="text-blue-700 hover:underline">
+                      Users
+                    </Link>
+                    .
+                  </span>
+                </span>
+              </label>
+              {!settings.allowSignup && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  Public registration is off. Add learners and staff from Studio → Users.
+                </p>
+              )}
             </CardContent>
           </Card>
 

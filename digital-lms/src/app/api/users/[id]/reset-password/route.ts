@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { requireSession, jsonError, hashPassword } from "@/lib/auth";
-
-function generateTempPassword() {
-  const chunk = () =>
-    Math.random().toString(36).slice(2, 6).toUpperCase().replace(/O|I|0|1/g, "A");
-  return `Dp-${chunk()}-${chunk()}`;
-}
+import { generateTempPassword } from "@/lib/temp-password";
 
 export async function POST(
   _req: Request,

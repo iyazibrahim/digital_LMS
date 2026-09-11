@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientPagination } from "@/components/studio/pagination";
 import { ROLES, Role } from "@/lib/constants";
@@ -15,6 +15,8 @@ type UserRow = {
   isActive: boolean;
 };
 
+const emptyCreate = { name: "", email: "", roles: ["student"] as Role[] };
+
 export default function StudioUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [q, setQ] = useState("");
@@ -23,8 +25,14 @@ export default function StudioUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [tempPass, setTempPass] = useState<{ name: string; password: string } | null>(null);
+  const [tempPass, setTempPass] = useState<{ name: string; email?: string; password: string } | null>(
+    null
+  );
   const [copied, setCopied] = useState(false);
+  const [createForm, setCreateForm] = useState(emptyCreate);
+  const [creating, setCreating] = useState(false);
+  const [allowSignup, setAllowSignup] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   async function load(query = q, p = page) {
     const sp = new URLSearchParams();
@@ -43,8 +51,63 @@ export default function StudioUsersPage() {
 
   useEffect(() => {
     void load("", 1);
+    void fetch("/api/settings", { credentials: "same-origin", cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        const s = d.settings || d;
+        if (typeof s?.allowSignup === "boolean") setAllowSignup(s.allowSignup);
+      })
+      .catch(() => {
+        /* keep default */
+      });
+    void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.user?.roles?.includes("admin")))
+      .catch(() => setIsAdmin(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function toggleCreateRole(role: Role) {
+    setCreateForm((prev) => {
+      const roles = prev.roles.includes(role)
+        ? prev.roles.filter((r) => r !== role)
+        : [...prev.roles, role];
+      return { ...prev, roles: roles.length ? roles : prev.roles };
+    });
+  }
+
+  async function createUser(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setCopied(false);
+    if (!createForm.roles.length) {
+      setError("Choose at least one role");
+      return;
+    }
+    setCreating(true);
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(createForm),
+    });
+    const data = await res.json();
+    setCreating(false);
+    if (!res.ok) {
+      setError(data.error || "Could not create user");
+      return;
+    }
+    setCreateForm(emptyCreate);
+    setTempPass({
+      name: data.user?.name || createForm.name,
+      email: data.user?.email,
+      password: data.temporaryPassword,
+    });
+    setMessage(`Created ${data.user?.name || "user"}`);
+    setQ("");
+    await load("", 1);
+  }
 
   async function toggleRole(user: UserRow, role: Role) {
     setError("");
@@ -59,6 +122,7 @@ export default function StudioUsersPage() {
     const res = await fetch("/api/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({ userId: user._id, roles }),
     });
     const data = await res.json();
@@ -76,6 +140,7 @@ export default function StudioUsersPage() {
     const res = await fetch("/api/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({
         userId: user._id,
         roles: user.roles,
@@ -105,7 +170,7 @@ export default function StudioUsersPage() {
       setError(data.error || "Reset failed");
       return;
     }
-    setTempPass({ name: user.name, password: data.temporaryPassword });
+    setTempPass({ name: user.name, email: user.email, password: data.temporaryPassword });
     setMessage(`Temporary password created for ${user.name}`);
   }
 
@@ -124,9 +189,71 @@ export default function StudioUsersPage() {
       <div>
         <h1 className="font-serif text-3xl text-blue-950">Users</h1>
         <p className="text-stone-600">
-          Search learners, change roles, reset passwords, and activate accounts.
+          Create accounts, search learners, change roles, reset passwords, and activate accounts.
         </p>
       </div>
+
+      {!allowSignup && isAdmin && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Public sign-up is disabled in Settings. New accounts can only be created here.
+        </p>
+      )}
+
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-xl">Create user</CardTitle>
+          </CardHeader>
+        <CardContent>
+          <form onSubmit={createUser} className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="create-name">Full name</Label>
+              <Input
+                id="create-name"
+                required
+                minLength={2}
+                value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="create-email">Email</Label>
+              <Input
+                id="create-email"
+                type="email"
+                required
+                value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Roles</Label>
+              <div className="flex flex-wrap gap-3">
+                {ROLES.map((role) => (
+                  <label key={role} className="inline-flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={createForm.roles.includes(role)}
+                      onChange={() => toggleCreateRole(role)}
+                    />
+                    {role}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit" disabled={creating}>
+                {creating ? "Creating…" : "Create user"}
+              </Button>
+              <p className="mt-2 text-xs text-stone-500">
+                A temporary password is generated. The user must change it on first login.
+              </p>
+            </div>
+          </form>
+        </CardContent>
+        </Card>
+      )}
+
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -154,6 +281,7 @@ export default function StudioUsersPage() {
             <CardTitle className="text-base">Temporary password for {tempPass.name}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-3">
+            {tempPass.email && <p className="w-full text-sm text-amber-900">{tempPass.email}</p>}
             <code className="rounded-lg bg-white px-3 py-2 font-mono text-sm tracking-wide">
               {tempPass.password}
             </code>
@@ -185,6 +313,7 @@ export default function StudioUsersPage() {
                 <td className="px-4 py-3">
                   <p className="font-medium">{u.name}</p>
                   <p className="text-xs text-stone-500">{u.email}</p>
+                  {!u.isActive && <p className="text-xs text-red-600">Inactive</p>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">

@@ -1,12 +1,16 @@
 import { getSession } from "@/lib/auth";
 import { isStaff } from "@/lib/constants";
+import { getAllowSignup } from "@/lib/public-access";
 import { SiteHeaderClient } from "@/components/layout/site-header-client";
 
 export async function SiteHeader() {
   const session = await getSession();
   const staff = isStaff(session?.roles);
+  const allowSignup = await getAllowSignup();
 
-  return <SiteHeaderClient sessionName={session?.name} staff={staff} />;
+  return (
+    <SiteHeaderClient sessionName={session?.name} staff={staff} allowSignup={allowSignup} />
+  );
 }
 
 export function SiteFooter() {

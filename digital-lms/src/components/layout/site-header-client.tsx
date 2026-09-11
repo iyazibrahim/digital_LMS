@@ -16,9 +16,11 @@ const nav = [
 export function SiteHeaderClient({
   sessionName,
   staff,
+  allowSignup = true,
 }: {
   sessionName?: string;
   staff?: boolean;
+  allowSignup?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(sessionName);
@@ -116,9 +118,11 @@ export function SiteHeaderClient({
                   Log in
                 </Button>
               </Link>
-              <Link href="/register">
-                <Button size="sm">Get started</Button>
-              </Link>
+              {allowSignup ? (
+                <Link href="/register">
+                  <Button size="sm">Get started</Button>
+                </Link>
+              ) : null}
             </>
           )}
         </div>

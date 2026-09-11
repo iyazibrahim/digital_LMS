@@ -14,6 +14,7 @@ import {
 import { Role } from "@/lib/constants";
 import { ensureSeed } from "@/lib/ensure-seed";
 import { cookies } from "next/headers";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,12 @@ const schema = z.object({
   next: z.string().optional(),
 });
 
-function fail(message: string, status: number, detail?: unknown) {
+function fail(message: string, status: number, detail?: unknown, headers?: HeadersInit) {
   const body: Record<string, unknown> = { error: message };
   if (process.env.SHOW_ERROR_DETAILS === "1" && detail) {
     body.detail = detail instanceof Error ? detail.message : String(detail);
   }
-  return NextResponse.json(body, { status });
+  return NextResponse.json(body, { status, headers });
 }
 
 async function writeCookies(
@@ -68,6 +69,13 @@ async function writeCookies(
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = rateLimit(`login:${clientIp(req)}`, { limit: 10, windowMs: 60_000 });
+    if (!limited.ok) {
+      return fail("Too many login attempts. Try again later.", 429, undefined, {
+        "Retry-After": String(limited.retryAfterSec),
+      });
+    }
+
     const contentType = req.headers.get("content-type") || "";
     let email = "";
     let password = "";
@@ -92,22 +100,14 @@ export async function POST(req: NextRequest) {
       await connectDB();
     } catch (dbErr) {
       console.error("[login] DB connection failed", dbErr);
-      return fail(
-        "Database unavailable. In Dokploy, set MONGODB_URI=mongodb://mongo:27017/digital-lms and ensure the mongo service is healthy.",
-        503,
-        dbErr
-      );
+      return fail("Database unavailable. Please try again later.", 503, dbErr);
     }
 
     try {
       await ensureSeed();
     } catch (seedErr) {
       console.error("[login] seed failed", seedErr);
-      return fail(
-        "Could not prepare admin account. Check mongo logs and SEED_* env vars.",
-        503,
-        seedErr
-      );
+      return fail("Service unavailable. Please try again later.", 503, seedErr);
     }
 
     if (mongoose.connection.readyState !== 1) {
@@ -154,9 +154,6 @@ export async function POST(req: NextRequest) {
         roles,
         mustChangePassword: !!user.mustChangePassword,
       },
-      // Client persists these when Set-Cookie is stripped by CDN/proxy
-      accessToken: access,
-      refreshToken: refresh,
       mustChangePassword: !!user.mustChangePassword,
     });
     await writeCookies(res, access, refresh, req);
@@ -169,6 +166,6 @@ export async function POST(req: NextRequest) {
       return fail(err.message, err.status);
     }
     console.error("[login] unexpected", err);
-    return fail("Login failed. Check app logs and MongoDB.", 500, err);
+    return fail("Login failed. Please try again.", 500, err);
   }
 }

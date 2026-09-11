@@ -6,6 +6,7 @@ import { PRIVILEGED_ROLES } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
 import { parsePageParams } from "@/lib/paginate";
 import { getSettings } from "@/models/Settings";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       title: body.title,
       slug,
       excerpt: body.excerpt || "",
-      body: body.body,
+      body: sanitizeHtml(body.body),
       coverImageUrl: body.coverImageUrl || "",
       status,
       authorId: session.sub,

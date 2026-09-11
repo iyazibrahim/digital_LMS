@@ -1,40 +1,19 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
-import { User } from "@/models/User";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const mongoUriSet = Boolean(process.env.MONGODB_URI);
   try {
     await connectDB();
-    const users = await User.countDocuments();
+    const ready = mongoose.connection.readyState === 1;
     return NextResponse.json({
-      ok: true,
-      mongo: {
-        readyState: mongoose.connection.readyState,
-        uriConfigured: mongoUriSet,
-        host: mongoose.connection.host,
-        name: mongoose.connection.name,
-      },
-      users,
-      hint:
-        users === 0
-          ? "No users yet — seed should create admin on connect. Check SEED_ADMIN_* and mongo logs."
-          : "DB OK. Use SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD to sign in.",
+      ok: ready,
+      status: ready ? "healthy" : "degraded",
     });
   } catch (err) {
     console.error("[health]", err);
-    return NextResponse.json(
-      {
-        ok: false,
-        mongo: { uriConfigured: mongoUriSet, readyState: mongoose.connection.readyState },
-        error: err instanceof Error ? err.message : "health check failed",
-        dokploy:
-          "App listens on 8090. Set Dokploy domain port to 8090. MONGODB_URI=mongodb://mongo:27017/digital-lms",
-      },
-      { status: 503 }
-    );
+    return NextResponse.json({ ok: false, status: "unhealthy" }, { status: 503 });
   }
 }

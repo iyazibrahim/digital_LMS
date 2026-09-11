@@ -12,6 +12,7 @@ import {
   AuthError,
 } from "@/lib/auth";
 import { Role } from "@/lib/constants";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -21,6 +22,14 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = rateLimit(`register:${clientIp(req)}`, { limit: 5, windowMs: 60_000 });
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
     const body = schema.parse(await req.json());
     await connectDB();
     const settings = await getSettings();

@@ -5,8 +5,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { persistAuthTokens } from "@/lib/client-auth";
-
 export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,14 +28,11 @@ export default function LoginForm({ defaultNext = "/" }: { defaultNext?: string 
         setLoading(false);
         return;
       }
-      if (data.accessToken && data.refreshToken) {
-        persistAuthTokens(data.accessToken, data.refreshToken);
-      }
       if (data.mustChangePassword || data.user?.mustChangePassword) {
         window.location.href = `/profile?forcePassword=1&next=${encodeURIComponent(defaultNext || "/")}`;
         return;
       }
-      // Hard navigation so RSC picks up cookies / tokens
+      // Hard navigation so RSC picks up httpOnly session cookies
       window.location.href = defaultNext || "/";
     } catch {
       setError("Network error — try again");

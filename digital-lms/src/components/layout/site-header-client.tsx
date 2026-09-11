@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clearAuthTokens, getAccessToken, persistAuthTokens } from "@/lib/client-auth";
+import { clearAuthTokens } from "@/lib/client-auth";
 
 const nav = [
   { href: "/courses", label: "Courses" },
@@ -26,22 +26,15 @@ export function SiteHeaderClient({
 
   useEffect(() => {
     let cancelled = false;
-    const headers: HeadersInit = {};
-    const token = getAccessToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
 
-    void fetch("/api/auth/me", { credentials: "include", cache: "no-store", headers })
+    void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
       .then(async (r) => {
         const data = await r.json();
         if (cancelled) return;
         if (r.ok && data.user) {
           setName(data.user.name);
           setIsStaffUser(!!data.user.isStaff);
-          // Refresh client tokens if server re-issued session via cookies only
-          if (data.accessToken && data.refreshToken) {
-            persistAuthTokens(data.accessToken, data.refreshToken);
-          }
-        } else if (!getAccessToken()) {
+        } else {
           setName(undefined);
           setIsStaffUser(false);
         }

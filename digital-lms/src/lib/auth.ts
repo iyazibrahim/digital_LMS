@@ -11,10 +11,35 @@ import {
   hasRole,
 } from "./constants";
 
+const WEAK_SECRETS = new Set([
+  "",
+  "change-me-access",
+  "change-me-refresh",
+  "dev-access-secret-change-me",
+  "dev-refresh-secret-change-me",
+]);
+
+function requireSecret(value: string | undefined, name: string, devFallback: string) {
+  const secret = (value || "").trim();
+  if (process.env.NODE_ENV === "production") {
+    if (!secret || WEAK_SECRETS.has(secret)) {
+      throw new Error(
+        `${name} must be set to a strong unique value in production (not a change-me placeholder).`
+      );
+    }
+    return new TextEncoder().encode(secret);
+  }
+  return new TextEncoder().encode(secret || devFallback);
+}
+
 const accessSecret = () =>
-  new TextEncoder().encode(process.env.JWT_ACCESS_SECRET || "dev-access-secret-change-me");
+  requireSecret(process.env.JWT_ACCESS_SECRET, "JWT_ACCESS_SECRET", "dev-access-secret-change-me");
 const refreshSecret = () =>
-  new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-change-me");
+  requireSecret(
+    process.env.JWT_REFRESH_SECRET,
+    "JWT_REFRESH_SECRET",
+    "dev-refresh-secret-change-me"
+  );
 
 export interface AuthPayload {
   sub: string;
@@ -155,17 +180,14 @@ export function safeNextPath(next: string | null | undefined, fallback = "/") {
   return next;
 }
 
-async function hydratePayload(payload: AuthPayload): Promise<AuthPayload> {
-  if (payload.roles.length && payload.name) return payload;
+async function hydratePayload(payload: AuthPayload): Promise<AuthPayload | null> {
   try {
     const { connectDB } = await import("@/lib/db");
     const { User } = await import("@/models/User");
     await connectDB();
     const user = await User.findById(payload.sub).select("roles name email isActive").lean();
-    if (!user) return payload;
-    if (user.isActive === false) {
-      return payload; // caller may still treat as logged-in; requireSession can check later
-    }
+    if (!user) return null;
+    if (user.isActive === false) return null;
     return {
       sub: String(user._id),
       email: String(user.email),
@@ -174,7 +196,9 @@ async function hydratePayload(payload: AuthPayload): Promise<AuthPayload> {
     };
   } catch (err) {
     console.error("[hydratePayload]", err);
-    return payload;
+    // If DB is down, allow JWT claims only when roles were already present
+    if (payload.roles.length && payload.name) return payload;
+    return null;
   }
 }
 

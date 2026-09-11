@@ -23,7 +23,7 @@ COPY --from=builder /app/src ./src
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
-RUN mkdir -p public/uploads && chown -R nextjs:nodejs /app
+RUN mkdir -p storage/uploads public && chown -R nextjs:nodejs /app
 USER nextjs
 # 8090 matches Cloudflare Tunnel + Dokploy domain (Dokploy UI often uses 3000)
 EXPOSE 8090

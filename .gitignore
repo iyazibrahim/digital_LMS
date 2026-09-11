@@ -12,5 +12,7 @@ digital-lms/node_modules/
 digital-lms/.next/
 digital-lms/public/uploads/*
 !digital-lms/public/uploads/.gitkeep
+digital-lms/storage/uploads/*
+!digital-lms/storage/uploads/.gitkeep
 
 digital-lms/.memory-mongo-uri

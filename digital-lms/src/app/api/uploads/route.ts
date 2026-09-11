@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile } from "fs/promises";
 import path from "path";
 import { requireSession, jsonError } from "@/lib/auth";
+import {
+  ensureUploadsRoot,
+  sanitizeFileName,
+  validateUploadFile,
+  UPLOADS_ROOT,
+} from "@/lib/uploads";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,12 +16,14 @@ export async function POST(req: NextRequest) {
     const file = form.get("file") as File | null;
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
+    const check = validateUploadFile(file, { allowZip: false });
+    if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
+
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const safe = sanitizeFileName(file.name);
     const name = `${Date.now()}-${safe}`;
-    const dir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, name), bytes);
+    await ensureUploadsRoot();
+    await writeFile(path.join(UPLOADS_ROOT, name), bytes);
     return NextResponse.json({ url: `/uploads/${name}`, fileName: file.name });
   } catch (err) {
     return jsonError(err);

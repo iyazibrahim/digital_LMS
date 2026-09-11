@@ -1,0 +1,31 @@
+name: Security audit
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "digital-lms/package.json"
+      - "digital-lms/package-lock.json"
+      - ".github/workflows/npm-audit.yml"
+  pull_request:
+    paths:
+      - "digital-lms/package.json"
+      - "digital-lms/package-lock.json"
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: digital-lms
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: digital-lms/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high

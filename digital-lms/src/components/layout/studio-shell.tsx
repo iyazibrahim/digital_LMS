@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { clearAuthTokens, getAccessToken } from "@/lib/client-auth";
+import { clearAuthTokens } from "@/lib/client-auth";
 
 const links = [
   { href: "/studio", label: "Overview", exact: true },
@@ -67,18 +67,11 @@ export function StudioShell({
 
   useEffect(() => {
     const original = window.fetch.bind(window);
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      const headers = new Headers(init?.headers || {});
-      const token = getAccessToken();
-      if (token && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return original(input, {
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) =>
+      original(input, {
         ...init,
-        headers,
         credentials: init?.credentials || "include",
       });
-    };
     return () => {
       window.fetch = original;
     };

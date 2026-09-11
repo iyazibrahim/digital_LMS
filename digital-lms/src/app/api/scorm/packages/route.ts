@@ -4,6 +4,13 @@ import path from "path";
 import AdmZip from "adm-zip";
 import { requireSession, jsonError } from "@/lib/auth";
 import { PRIVILEGED_ROLES } from "@/lib/constants";
+import {
+  UPLOADS_ROOT,
+  MAX_SCORM_BYTES,
+  ensureUploadsRoot,
+  sanitizeFileName,
+  resolveUploadPath,
+} from "@/lib/uploads";
 
 async function findHtml(dir: string): Promise<string | null> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -45,6 +52,25 @@ async function resolveLaunch(extractDir: string, publicBase: string): Promise<st
   return `${publicBase}/package.zip`;
 }
 
+/** Extract zip entries only under extractDir (zip-slip safe). */
+async function extractZipSafe(bytes: Buffer, extractDir: string) {
+  const zip = new AdmZip(bytes);
+  const root = path.resolve(extractDir);
+  for (const entry of zip.getEntries()) {
+    if (entry.isDirectory) continue;
+    const name = entry.entryName.replace(/^[/\\]+/, "").replace(/\\/g, "/");
+    if (!name || name.split("/").some((p) => p === ".." || p === "")) {
+      throw new Error(`Unsafe zip entry: ${entry.entryName}`);
+    }
+    const dest = path.resolve(extractDir, name);
+    if (!dest.startsWith(root + path.sep)) {
+      throw new Error(`Zip path traversal blocked: ${entry.entryName}`);
+    }
+    await mkdir(path.dirname(dest), { recursive: true });
+    await writeFile(dest, entry.getData());
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     await requireSession(PRIVILEGED_ROLES);
@@ -54,17 +80,28 @@ export async function POST(req: NextRequest) {
     if (!file.name.toLowerCase().endsWith(".zip")) {
       return NextResponse.json({ error: "SCORM package must be a .zip file" }, { status: 400 });
     }
+    if (file.size > MAX_SCORM_BYTES) {
+      return NextResponse.json({ error: "SCORM package too large (max 50MB)" }, { status: 400 });
+    }
 
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const publicBase = `/uploads/scorm/${id}`;
-    const extractDir = path.join(process.cwd(), "public", "uploads", "scorm", id);
+    const extractDir = path.join(UPLOADS_ROOT, "scorm", id);
+    if (!resolveUploadPath(["scorm", id])) {
+      return NextResponse.json({ error: "Invalid package path" }, { status: 400 });
+    }
+    await ensureUploadsRoot();
     await mkdir(extractDir, { recursive: true });
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(extractDir, "package.zip"), bytes);
+    await writeFile(path.join(extractDir, sanitizeFileName("package.zip")), bytes);
 
-    const zip = new AdmZip(bytes);
-    zip.extractAllTo(extractDir, true);
+    try {
+      await extractZipSafe(bytes, extractDir);
+    } catch (zipErr) {
+      console.error("[scorm/packages] zip extract", zipErr);
+      return NextResponse.json({ error: "Invalid or unsafe SCORM zip" }, { status: 400 });
+    }
 
     const launchPath = await resolveLaunch(extractDir, publicBase);
 

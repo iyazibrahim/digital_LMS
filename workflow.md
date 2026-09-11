@@ -101,4 +101,16 @@
 - **Profile:** Role-aware layouts (student stats/learning vs staff Studio snapshot) + password change.
 - Build: `npm run build` passed.
 
+### 2026-09-11 — Basic security checklist hardening
+
+- **Auth cookies only:** Removed JWT from `sessionStorage` / readable `document.cookie`; login/`/api/auth/me` no longer return tokens; `authFetch` uses `credentials: "include"`.
+- **Inactive users:** `hydratePayload` rejects `isActive === false`.
+- **XSS:** `sanitizeHtml` (isomorphic-dompurify) on lesson/bulletin store + render.
+- **Headers:** HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy in `next.config.ts`.
+- **Rate limit:** In-memory limiter on login (10/min) and register (5/min).
+- **Uploads:** MIME/size allowlist; store under `storage/uploads` (not `public/`); serve via authenticated `/uploads/[...path]`; SCORM zip-slip safe extract.
+- **IDOR:** Certificates API requires owner/staff; exercise answers stripped for students; `/api/health` returns ok/status only.
+- **Ops:** Production rejects weak JWT secrets; Compose defaults `COOKIE_SECURE=1`, `SHOW_ERROR_DETAILS=0`, required JWT secrets; Dependabot + `npm audit` workflow.
+- Build: `npm run build` passed.
+
 

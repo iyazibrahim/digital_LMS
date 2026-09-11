@@ -22,6 +22,8 @@ import { ExercisePlayer } from "@/components/course/exercise-player";
 import { ScormPlayer } from "@/components/course/scorm-player";
 import { VideoEmbed } from "@/components/course/video-embed";
 import { evaluateLessonGate } from "@/lib/lesson-criteria";
+import { sanitizeHtml } from "@/lib/sanitize";
+import { studentSafeExercise } from "@/lib/exercise-safe";
 import type { Types } from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -250,7 +252,7 @@ export default async function LessonPlayerPage({
                   {lesson.contentHtml && (
                     <div
                       className="prose-lesson rounded-2xl border border-stone-200 bg-white p-6"
-                      dangerouslySetInnerHTML={{ __html: lesson.contentHtml }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(lesson.contentHtml) }}
                     />
                   )}
                 </ReadingTracker>
@@ -275,7 +277,13 @@ export default async function LessonPlayerPage({
           )}
 
           {exercise && (
-            <ExercisePlayer exercise={JSON.parse(JSON.stringify(exercise))} />
+            <ExercisePlayer
+              exercise={JSON.parse(
+                JSON.stringify(
+                  studentSafeExercise(exercise as unknown as Record<string, unknown>)
+                )
+              )}
+            />
           )}
 
           <DiscussionPanel

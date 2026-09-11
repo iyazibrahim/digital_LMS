@@ -4,6 +4,7 @@ import { Course } from "@/models/Course";
 import { requireSession, jsonError } from "@/lib/auth";
 import { PRIVILEGED_ROLES } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export async function POST(
   req: NextRequest,
@@ -25,7 +26,7 @@ export async function POST(
     chapter.lessons.push({
       title: body.title || "New lesson",
       slug,
-      contentHtml: body.contentHtml || "",
+      contentHtml: sanitizeHtml(body.contentHtml || ""),
       content: body.content || null,
       videoUrl: body.videoUrl,
       pdfUrl: body.pdfUrl,

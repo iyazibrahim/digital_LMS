@@ -4,6 +4,7 @@ import { Course } from "@/models/Course";
 import { requireSession, jsonError } from "@/lib/auth";
 import { PRIVILEGED_ROLES } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export async function PATCH(
   req: NextRequest,
@@ -23,6 +24,9 @@ export async function PATCH(
     if (!lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     if (body.title && body.title !== lesson.title) {
       body.slug = slugify(body.title);
+    }
+    if (body.contentHtml !== undefined) {
+      body.contentHtml = sanitizeHtml(body.contentHtml);
     }
     Object.assign(lesson, body);
     await course.save();

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   attachSessionCookies,
-  cookieSecure,
   getSessionFromRequest,
-  signAccessToken,
-  signRefreshToken,
 } from "@/lib/auth";
 import { isStaff } from "@/lib/constants";
 
@@ -14,18 +11,10 @@ export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req);
   if (!session) {
     return NextResponse.json(
-      {
-        user: null,
-        cookieSecure: cookieSecure(req),
-        hasAccessCookie: Boolean(req.cookies.get("dp_access")?.value),
-        hasRefreshCookie: Boolean(req.cookies.get("dp_refresh")?.value),
-      },
+      { user: null },
       { status: 401, headers: { "Cache-Control": "no-store" } }
     );
   }
-
-  const accessToken = await signAccessToken(session);
-  const refreshToken = await signRefreshToken(session);
 
   const res = NextResponse.json(
     {
@@ -36,8 +25,6 @@ export async function GET(req: NextRequest) {
         roles: session.roles,
         isStaff: isStaff(session.roles),
       },
-      accessToken,
-      refreshToken,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import { Bulletin } from "@/models/Bulletin";
 import { formatDate } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function BulletinPostPage({
       )}
       <div
         className="prose-lesson mt-8 rounded-2xl border border-stone-200 bg-white p-6"
-        dangerouslySetInnerHTML={{ __html: post.body }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body) }}
       />
     </article>
   );

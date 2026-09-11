@@ -4,6 +4,7 @@ import { Bulletin } from "@/models/Bulletin";
 import { getSession, requireSession, jsonError } from "@/lib/auth";
 import { PRIVILEGED_ROLES } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 export async function GET(
   _req: NextRequest,
@@ -41,7 +42,7 @@ export async function PATCH(
 
     if (body.title !== undefined) post.title = body.title;
     if (body.excerpt !== undefined) post.excerpt = body.excerpt;
-    if (body.body !== undefined) post.body = body.body;
+    if (body.body !== undefined) post.body = sanitizeHtml(body.body);
     if (body.coverImageUrl !== undefined) post.coverImageUrl = body.coverImageUrl;
     if (body.slug) post.slug = slugify(body.slug);
     if (body.status === "published" || body.status === "draft") {

@@ -25,8 +25,10 @@ services:
       NODE_ENV: production
       PORT: "8090"
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/digital-lms}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET to a strong random value}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET to a strong random value}
+      # Do not use ${VAR:?...} here — Dokploy injects secrets into the container after
+      # Compose interpolation; :? aborts the whole stack before the app starts.
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://lms.iyazbrhm.cloud}
       COOKIE_SECURE: ${COOKIE_SECURE:-1}
       SHOW_ERROR_DETAILS: ${SHOW_ERROR_DETAILS:-0}

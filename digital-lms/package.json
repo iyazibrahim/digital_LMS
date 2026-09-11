@@ -50,6 +50,6 @@
     "mongodb-memory-server": "^11.2.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.3",
-    "typescript": "^5"
+    "typescript": "^7"
   }
 }

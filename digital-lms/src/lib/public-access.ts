@@ -11,3 +11,14 @@ export async function getAllowSignup(): Promise<boolean> {
     return true;
   }
 }
+
+/** Public job board — off unless admin explicitly enables it. */
+export async function getEnableJobs(): Promise<boolean> {
+  try {
+    await connectDB();
+    const settings = await getSettings();
+    return settings.enableJobs === true;
+  } catch {
+    return false;
+  }
+}

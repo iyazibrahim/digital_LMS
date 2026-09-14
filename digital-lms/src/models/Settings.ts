@@ -18,6 +18,8 @@ export interface ISettings {
   enableJobBoard?: boolean;
   enableBulletin: boolean;
   enableJobs: boolean;
+  /** One-time migration: public jobs default off */
+  jobsDisabledDefaultApplied?: boolean;
   enablePrograms: boolean;
   enableDiscussions: boolean;
   enableEvaluations: boolean;
@@ -51,9 +53,11 @@ const SettingsSchema = new Schema<ISettings>(
     stripeSecretKey: String,
     stripeWebhookSecret: String,
     enablePayments: { type: Boolean, default: false },
-    enableJobBoard: { type: Boolean, default: true },
+    enableJobBoard: { type: Boolean, default: false },
     enableBulletin: { type: Boolean, default: true },
-    enableJobs: { type: Boolean, default: true },
+    enableJobs: { type: Boolean, default: false },
+    /** One-time flag: public job board forced off until admin re-enables */
+    jobsDisabledDefaultApplied: { type: Boolean, default: false },
     enablePrograms: { type: Boolean, default: true },
     enableDiscussions: { type: Boolean, default: true },
     enableEvaluations: { type: Boolean, default: true },
@@ -88,14 +92,20 @@ export async function getSettings() {
   if (!doc) {
     doc = await Settings.create({});
   }
-  // Migrate legacy enableJobBoard → enableBulletin / enableJobs once
+  // Migrate legacy enableJobBoard → enableBulletin once
   let dirty = false;
   if (doc.enableBulletin === undefined || doc.enableBulletin === null) {
     doc.enableBulletin = doc.enableJobBoard !== false;
     dirty = true;
   }
-  if (doc.enableJobs === undefined || doc.enableJobs === null) {
-    doc.enableJobs = doc.enableJobBoard !== false;
+  // Public job board OFF by default; admin re-enables in Studio → Settings
+  if (!doc.jobsDisabledDefaultApplied) {
+    doc.enableJobs = false;
+    doc.enableJobBoard = false;
+    doc.jobsDisabledDefaultApplied = true;
+    dirty = true;
+  } else if (doc.enableJobs === undefined || doc.enableJobs === null) {
+    doc.enableJobs = false;
     dirty = true;
   }
   if (doc.enableEvaluations === undefined || doc.enableEvaluations === null) {
@@ -115,8 +125,8 @@ export function publicSettings(settings: ISettings) {
     allowSignup: settings.allowSignup,
     primaryColor: settings.primaryColor,
     enablePayments: settings.enablePayments,
-    enableBulletin: settings.enableBulletin ?? settings.enableJobBoard !== false,
-    enableJobs: settings.enableJobs ?? settings.enableJobBoard !== false,
+    enableBulletin: settings.enableBulletin ?? true,
+    enableJobs: settings.enableJobs === true,
     enablePrograms: settings.enablePrograms,
     enableDiscussions: settings.enableDiscussions,
     enableEvaluations: settings.enableEvaluations !== false,

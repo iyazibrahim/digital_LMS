@@ -84,11 +84,14 @@ export async function PATCH(req: NextRequest) {
       settings.set(key, val as ISettings[typeof key]);
     }
 
-    if ("enableBulletin" in body) {
-      settings.enableJobBoard = !!settings.enableBulletin || !!settings.enableJobs;
-    }
     if ("enableJobs" in body) {
-      settings.enableJobBoard = !!settings.enableBulletin || !!settings.enableJobs;
+      settings.enableJobBoard = !!settings.enableJobs;
+      // Admin made an explicit choice — don't re-run the one-time disable migration
+      settings.jobsDisabledDefaultApplied = true;
+    }
+    if ("enableBulletin" in body && !("enableJobs" in body)) {
+      // keep enableJobBoard as jobs flag for legacy readers when only bulletin changes
+      settings.enableJobBoard = !!settings.enableJobs;
     }
 
     await settings.save();

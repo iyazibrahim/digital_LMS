@@ -19,8 +19,7 @@ const typeLabel: Record<string, string> = {
 export default async function JobsPage() {
   await connectDB();
   const settings = await getSettings();
-  const enableJobs =
-    (settings as { enableJobs?: boolean }).enableJobs ?? settings.enableJobBoard !== false;
+  const enableJobs = settings.enableJobs === true;
 
   if (!enableJobs) {
     return (

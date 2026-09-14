@@ -26,9 +26,7 @@ export default async function JobDetailPage({
   const { id } = await params;
   await connectDB();
   const settings = await getSettings();
-  const enableJobs =
-    (settings as { enableJobs?: boolean }).enableJobs ?? settings.enableJobBoard !== false;
-  if (!enableJobs) notFound();
+  if (settings.enableJobs !== true) notFound();
 
   const job = await Job.findById(id).lean();
   if (!job || job.status !== "open") notFound();

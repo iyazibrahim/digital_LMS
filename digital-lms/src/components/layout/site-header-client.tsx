@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import { clearAuthTokens } from "@/lib/client-auth";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
-const publicNav = [
+const publicNavBase = [
   { href: "/courses", label: "Courses" },
   { href: "/batches", label: "Batches" },
   { href: "/programs", label: "Programs" },
-  { href: "/jobs", label: "Jobs" },
   { href: "/bulletin", label: "Bulletin" },
 ];
 
@@ -19,20 +18,23 @@ export function SiteHeaderClient({
   sessionName,
   staff,
   allowSignup = true,
+  enableJobs = false,
 }: {
   sessionName?: string;
   staff?: boolean;
   allowSignup?: boolean;
+  enableJobs?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(sessionName);
   const [isStaffUser, setIsStaffUser] = useState(!!staff);
+  const [jobsEnabled, setJobsEnabled] = useState(enableJobs);
 
   useEffect(() => {
     let cancelled = false;
 
-    void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
-      .then(async (r) => {
+    void Promise.all([
+      fetch("/api/auth/me", { credentials: "include", cache: "no-store" }).then(async (r) => {
         const data = await r.json();
         if (cancelled) return;
         if (r.ok && data.user) {
@@ -42,10 +44,17 @@ export function SiteHeaderClient({
           setName(undefined);
           setIsStaffUser(false);
         }
-      })
-      .catch(() => {
-        /* keep SSR values */
-      });
+      }),
+      fetch("/api/settings", { credentials: "include", cache: "no-store" }).then(async (r) => {
+        const data = await r.json();
+        if (cancelled) return;
+        if (r.ok && data.settings) {
+          setJobsEnabled(data.settings.enableJobs === true);
+        }
+      }),
+    ]).catch(() => {
+      /* keep SSR values */
+    });
     return () => {
       cancelled = true;
     };
@@ -59,6 +68,14 @@ export function SiteHeaderClient({
     // Hard navigation so logout Set-Cookie + redirect fully apply (Next Link soft-nav skips this)
     window.location.assign("/api/auth/logout");
   }
+
+  const publicNav = jobsEnabled
+    ? [
+        ...publicNavBase.slice(0, 3),
+        { href: "/jobs", label: "Jobs" },
+        ...publicNavBase.slice(3),
+      ]
+    : publicNavBase;
 
   const nav = name
     ? [

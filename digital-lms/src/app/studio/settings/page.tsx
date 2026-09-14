@@ -50,7 +50,7 @@ const defaults: Settings = {
   primaryColor: "#1D4ED8",
   enablePayments: false,
   enableBulletin: true,
-  enableJobs: true,
+  enableJobs: false,
   enablePrograms: true,
   enableDiscussions: true,
   enableEvaluations: true,
@@ -221,7 +221,6 @@ export default function StudioSettingsPage() {
                 [
                   ["enablePayments", "Enable payments"],
                   ["enableBulletin", "Enable bulletin (news)"],
-                  ["enableJobs", "Enable job board"],
                   ["enablePrograms", "Enable programs"],
                   ["enableDiscussions", "Enable discussions"],
                   ["enableEvaluations", "Enable evaluations"],
@@ -236,6 +235,20 @@ export default function StudioSettingsPage() {
                   {label}
                 </label>
               ))}
+              <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-stone-800">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.enableJobs}
+                    onChange={(e) => set("enableJobs", e.target.checked)}
+                  />
+                  Enable public job board
+                </label>
+                <p className="mt-1.5 text-xs text-stone-500">
+                  Off by default. When enabled, /jobs appears in the site nav and learners can browse
+                  and apply. Studio → Jobs stays available for staff either way.
+                </p>
+              </div>
             </CardContent>
           </Card>
 

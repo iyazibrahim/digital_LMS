@@ -130,7 +130,12 @@
 - Seed users are created only from `SEED_*_EMAIL` / `SEED_*_PASSWORD` env vars (no hardcoded fallbacks). Compose and `.env.example` leave those blank.
 - README/workflow document env var names instead of real credentials.
 
-### 2026-09-14 — Competitive roadmap implementation (Phases 1–4)
+### 2026-09-14 — Disable public job board by default
+
+- Public `/jobs` and Jobs nav link are off unless admin enables **Enable public job board** in Studio → Settings → Features.
+- One-time migration sets `enableJobs: false` on existing settings; admin can turn it back on anytime.
+- Studio → Jobs remains available for staff to manage listings.
+
 
 Incubator + academic ops parity against Frappe Learning / Classroom / TalentLMS gaps:
 

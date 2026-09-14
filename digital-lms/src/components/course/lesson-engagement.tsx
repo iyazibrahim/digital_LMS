@@ -135,20 +135,29 @@ export function LessonEngagementProvider({
     if (reachedEnd) reachedEndRef.current = true;
   }, []);
 
-  const value = useMemo(
+  // Split stable API from gate state so video/read trackers can depend on report*
+  // without remounting when heartbeat updates gate.
+  const api = useMemo(
     () => ({
       courseId,
       chapterId,
       lessonId,
       completed,
-      gate,
-      ready: completed || !!gate?.ready,
-      reasons: gate?.reasons || [],
       reportWatch,
       reportRead,
       refreshGate,
     }),
-    [courseId, chapterId, lessonId, completed, gate, reportWatch, reportRead, refreshGate]
+    [courseId, chapterId, lessonId, completed, reportWatch, reportRead, refreshGate]
+  );
+
+  const value = useMemo(
+    () => ({
+      ...api,
+      gate,
+      ready: completed || !!gate?.ready,
+      reasons: gate?.reasons || [],
+    }),
+    [api, gate, completed]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

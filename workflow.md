@@ -136,6 +136,12 @@
 - One-time migration sets `enableJobs: false` on existing settings; admin can turn it back on anytime.
 - Studio → Jobs remains available for staff to manage listings.
 
+### 2026-09-14 — Fix course video constant refresh
+
+- Root cause: YouTube player `useEffect` depended on the whole engagement context; progress heartbeats updated `gate` every ~5s and remounted/destroyed the player.
+- Fix: track `reportWatch`/`reportRead` via refs; player effect depends only on `videoId`/`url`. Same for ReadingTracker.
+- Build: passed.
+
 
 Incubator + academic ops parity against Frappe Learning / Classroom / TalentLMS gaps:
 

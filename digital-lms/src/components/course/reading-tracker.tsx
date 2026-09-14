@@ -9,6 +9,8 @@ export function ReadingTracker({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const visible = useRef(true);
+  const reportReadRef = useRef(engagement?.reportRead);
+  reportReadRef.current = engagement?.reportRead;
 
   useEffect(() => {
     const onVis = () => {
@@ -17,14 +19,14 @@ export function ReadingTracker({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", onVis);
     const tick = setInterval(() => {
       if (visible.current && document.hasFocus()) {
-        engagement?.reportRead(1);
+        reportReadRef.current?.(1);
       }
     }, 1000);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       clearInterval(tick);
     };
-  }, [engagement]);
+  }, []);
 
   useEffect(() => {
     const el = endRef.current;
@@ -32,14 +34,14 @@ export function ReadingTracker({ children }: { children: ReactNode }) {
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          engagement?.reportRead(0, true);
+          reportReadRef.current?.(0, true);
         }
       },
       { threshold: 0.1 }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [engagement]);
+  }, []);
 
   return (
     <div ref={rootRef}>

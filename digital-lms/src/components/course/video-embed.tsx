@@ -56,6 +56,8 @@ function loadYouTubeApi(): Promise<void> {
       const s = document.createElement("script");
       s.src = "https://www.youtube.com/iframe_api";
       document.body.appendChild(s);
+    } else if (window.YT?.Player) {
+      resolve();
     }
   });
 }
@@ -65,14 +67,25 @@ function YouTubeTracked({ videoId }: { videoId: string }) {
   const playerRef = useRef<YTPlayer | null>(null);
   const lastT = useRef(0);
   const engagement = useLessonEngagementOptional();
+  // Keep reportWatch in a ref so progress heartbeats (which update context) do NOT
+  // remount / destroy the YouTube player every few seconds.
+  const reportWatchRef = useRef(engagement?.reportWatch);
+  reportWatchRef.current = engagement?.reportWatch;
 
   useEffect(() => {
     let cancelled = false;
     let tick: ReturnType<typeof setInterval> | null = null;
+    const host = mountRef.current;
+    if (!host) return;
 
     void loadYouTubeApi().then(() => {
       if (cancelled || !mountRef.current || !window.YT) return;
-      const player = new window.YT.Player(mountRef.current, {
+      // YT.Player replaces the mount node; keep a stable child to destroy cleanly
+      const target = document.createElement("div");
+      mountRef.current.innerHTML = "";
+      mountRef.current.appendChild(target);
+
+      const player = new window.YT.Player(target, {
         videoId,
         playerVars: { rel: 0, modestbranding: 1 },
         events: {
@@ -91,7 +104,7 @@ function YouTubeTracked({ videoId }: { videoId: string }) {
                 const delta = Math.max(0, Math.min(2, t - lastT.current));
                 // Only count forward play; seeks jump lastT without large credit
                 if (delta > 0 && delta <= 1.5) {
-                  engagement?.reportWatch(delta, dur);
+                  reportWatchRef.current?.(delta, dur);
                 }
                 lastT.current = t;
               }, 1000);
@@ -112,8 +125,9 @@ function YouTubeTracked({ videoId }: { videoId: string }) {
       } catch {
         /* ignore */
       }
+      playerRef.current = null;
     };
-  }, [videoId, engagement]);
+  }, [videoId]);
 
   return (
     <div className="aspect-video overflow-hidden rounded-xl bg-stone-100">
@@ -126,6 +140,8 @@ function Html5Tracked({ url }: { url: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const lastT = useRef(0);
   const engagement = useLessonEngagementOptional();
+  const reportWatchRef = useRef(engagement?.reportWatch);
+  reportWatchRef.current = engagement?.reportWatch;
 
   useEffect(() => {
     const el = ref.current;
@@ -136,12 +152,12 @@ function Html5Tracked({ url }: { url: string }) {
       const dur = el.duration || 0;
       const delta = Math.max(0, Math.min(2, t - lastT.current));
       if (!el.paused && delta > 0 && delta <= 1.5) {
-        engagement?.reportWatch(delta, dur);
+        reportWatchRef.current?.(delta, dur);
       }
       lastT.current = t;
     };
     const onMeta = () => {
-      if (el.duration) engagement?.reportWatch(0, el.duration);
+      if (el.duration) reportWatchRef.current?.(0, el.duration);
     };
 
     el.addEventListener("timeupdate", onTime);
@@ -150,7 +166,7 @@ function Html5Tracked({ url }: { url: string }) {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("loadedmetadata", onMeta);
     };
-  }, [engagement]);
+  }, [url]);
 
   return <video ref={ref} src={url} controls className="w-full rounded-xl" />;
 }

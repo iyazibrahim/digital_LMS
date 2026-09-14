@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearAuthTokens } from "@/lib/client-auth";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
-const nav = [
+const publicNav = [
   { href: "/courses", label: "Courses" },
   { href: "/batches", label: "Batches" },
   { href: "/programs", label: "Programs" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/bulletin", label: "Bulletin" },
 ];
 
@@ -58,6 +60,14 @@ export function SiteHeaderClient({
     window.location.assign("/api/auth/logout");
   }
 
+  const nav = name
+    ? [
+        { href: "/dashboard", label: "My Learning" },
+        ...publicNav,
+        { href: "/calendar", label: "Calendar" },
+      ]
+    : publicNav;
+
   return (
     <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -97,6 +107,7 @@ export function SiteHeaderClient({
             ) : null}
             {name ? (
             <>
+              <NotificationBell />
               <Link href="/profile" className="hidden sm:inline">
                 <Button variant="ghost" size="sm">
                   {name}

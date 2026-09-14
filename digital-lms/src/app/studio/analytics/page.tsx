@@ -14,6 +14,21 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Point = { date: string; label?: string; count: number };
+type AtRisk = {
+  userId: string;
+  name?: string;
+  email?: string;
+  courseTitle?: string;
+  progressPercent: number;
+  reason: string;
+};
+type CourseStat = {
+  courseId: string;
+  title: string;
+  enrollments: number;
+  completions: number;
+  completionRate: number;
+};
 type Analytics = {
   counts: Record<string, number>;
   series: {
@@ -21,13 +36,14 @@ type Analytics = {
     enrollments: Point[];
     completions: Point[];
   };
+  atRisk?: AtRisk[];
+  perCourse?: CourseStat[];
 };
 
 function normalizeAnalytics(raw: Record<string, unknown>): Analytics | null {
   if (raw.counts && raw.series) {
     return raw as unknown as Analytics;
   }
-  // Current API shape: { totals, signupsByDay }
   const totals = (raw.totals || {}) as Record<string, number>;
   const signupsByDay = (raw.signupsByDay || []) as Point[];
   if (!Object.keys(totals).length && !signupsByDay.length) return null;
@@ -71,7 +87,11 @@ export default function StudioAnalyticsPage() {
         if (cancelled) return;
         const normalized = normalizeAnalytics(d);
         if (!normalized) throw new Error("Unexpected analytics response");
-        setData(normalized);
+        setData({
+          ...normalized,
+          atRisk: d.atRisk || [],
+          perCourse: d.perCourse || [],
+        });
       })
       .catch((e) => {
         if (!cancelled) setError(e.message || "Failed to load analytics");
@@ -86,9 +106,6 @@ export default function StudioAnalyticsPage() {
       <div className="space-y-2">
         <h1 className="font-serif text-3xl text-blue-950">Analytics</h1>
         <p className="text-sm text-red-600">{error}</p>
-        <p className="text-sm text-stone-500">
-          If you see Unauthorized, log out and sign in again as admin, then reopen Studio.
-        </p>
       </div>
     );
   }
@@ -106,7 +123,7 @@ export default function StudioAnalyticsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="font-serif text-3xl text-blue-950">Analytics</h1>
-        <p className="text-stone-600">Platform totals and recent signup activity.</p>
+        <p className="text-stone-600">Platform totals, course completion, and at-risk learners.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -126,7 +143,7 @@ export default function StudioAnalyticsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-serif">Signups (last 7 days)</CardTitle>
+          <CardTitle className="font-serif">Activity (14 days)</CardTitle>
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -143,6 +160,46 @@ export default function StudioAnalyticsPage() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif">Per-course completion</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {(data.perCourse || []).map((c) => (
+              <div key={c.courseId} className="flex justify-between gap-2 border-b border-stone-50 py-2">
+                <span className="truncate">{c.title}</span>
+                <span className="shrink-0 text-stone-500">
+                  {c.completionRate}% ({c.completions}/{c.enrollments})
+                </span>
+              </div>
+            ))}
+            {!data.perCourse?.length && <p className="text-stone-500">No courses yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif">At-risk learners</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {(data.atRisk || []).map((r) => (
+              <div key={`${r.userId}-${r.courseTitle}`} className="rounded-lg border border-amber-100 bg-amber-50/40 p-2">
+                <p className="font-medium">
+                  {r.name} · {r.courseTitle}
+                </p>
+                <p className="text-xs text-stone-500">
+                  {r.email} · {r.progressPercent}% · {r.reason}
+                </p>
+              </div>
+            ))}
+            {!data.atRisk?.length && (
+              <p className="text-stone-500">No at-risk signals right now.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

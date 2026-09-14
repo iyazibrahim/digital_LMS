@@ -69,7 +69,12 @@ export default function LoginForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-blue-700 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
@@ -85,6 +90,15 @@ export default function LoginForm({
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
+          <p className="mt-3 text-center text-sm text-stone-500">
+            <Link href="/api/auth/google" className="text-blue-700 hover:underline">
+              Continue with Google
+            </Link>
+            {" · "}
+            <Link href="/api/auth/microsoft" className="text-blue-700 hover:underline">
+              Microsoft
+            </Link>
+          </p>
           {allowSignup ? (
             <p className="mt-4 text-center text-sm text-stone-500">
               No account?{" "}

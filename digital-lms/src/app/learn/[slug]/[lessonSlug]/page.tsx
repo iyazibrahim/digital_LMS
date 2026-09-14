@@ -41,6 +41,20 @@ export default async function LessonPlayerPage({
   const course = await Course.findOne({ slug });
   if (!course) notFound();
 
+  const { assertProgramOrder } = await import("@/lib/program-order");
+  const order = await assertProgramOrder(session.sub, String(course._id));
+  if (!order.ok) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <h1 className="font-serif text-2xl text-stone-900">Course locked</h1>
+        <p className="mt-3 text-stone-600">{order.message}</p>
+        <Link href="/programs" className="mt-6 inline-block text-blue-700 hover:underline">
+          View programs
+        </Link>
+      </div>
+    );
+  }
+
   let chapter = course.chapters.find((ch: IChapter) =>
     ch.lessons.some((l: ILesson) => l.slug === lessonSlug)
   );
@@ -153,12 +167,12 @@ export default async function LessonPlayerPage({
       initialGate={gate || null}
     >
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[240px_1fr]">
-        <aside className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
+        <aside className="order-2 lg:order-1 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
           <div className="space-y-2">
             <Link href={`/courses/${slug}`} className="text-sm text-blue-700 hover:underline">
               ← {course.title}
             </Link>
-            <nav className="mt-4 space-y-1">
+            <nav className="mt-4 max-h-64 space-y-1 overflow-y-auto lg:max-h-none">
               {allLessons.map((l: { slug: string; title: string; id: string }, i: number) => {
                 const done = completedSet.has(l.id);
                 // Sequential lock: only completed lessons, current, or the next unlocked one
@@ -203,7 +217,7 @@ export default async function LessonPlayerPage({
           </div>
         </aside>
 
-        <div className="min-w-0 space-y-6">
+        <div className="order-1 min-w-0 space-y-6 lg:order-2">
           <div>
             <p className="text-sm text-stone-500">{chapter.title}</p>
             <h1 className="font-serif text-3xl text-stone-900">{lesson.title}</h1>

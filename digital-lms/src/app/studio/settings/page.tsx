@@ -15,8 +15,10 @@ type Settings = {
   primaryColor: string;
   enablePayments: boolean;
   enableBulletin: boolean;
+  enableJobs?: boolean;
   enablePrograms: boolean;
   enableDiscussions: boolean;
+  enableEvaluations?: boolean;
   minWatchPercent: number;
   minReadSeconds: number;
   minScormSeconds: number;
@@ -27,6 +29,16 @@ type Settings = {
   stripePublishableKey?: string;
   stripeSecretKey?: string;
   stripeWebhookSecret?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
+  microsoftClientId?: string;
+  microsoftClientSecret?: string;
+  resendApiKey?: string;
+  openaiApiKey?: string;
+  _hasResendKey?: boolean;
+  _hasOpenaiKey?: boolean;
+  _hasGoogleSecret?: boolean;
+  _hasMicrosoftSecret?: boolean;
 };
 
 const defaults: Settings = {
@@ -38,8 +50,10 @@ const defaults: Settings = {
   primaryColor: "#1D4ED8",
   enablePayments: false,
   enableBulletin: true,
+  enableJobs: true,
   enablePrograms: true,
   enableDiscussions: true,
+  enableEvaluations: true,
   minWatchPercent: 80,
   minReadSeconds: 20,
   minScormSeconds: 30,
@@ -206,9 +220,11 @@ export default function StudioSettingsPage() {
               {(
                 [
                   ["enablePayments", "Enable payments"],
-                  ["enableBulletin", "Enable bulletin"],
+                  ["enableBulletin", "Enable bulletin (news)"],
+                  ["enableJobs", "Enable job board"],
                   ["enablePrograms", "Enable programs"],
                   ["enableDiscussions", "Enable discussions"],
+                  ["enableEvaluations", "Enable evaluations"],
                 ] as const
               ).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 text-sm">
@@ -220,6 +236,60 @@ export default function StudioSettingsPage() {
                   {label}
                 </label>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif">Email & AI & SSO</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label>Resend API key</Label>
+                <Input
+                  type="password"
+                  placeholder={settings._hasResendKey ? "••••••••" : "re_…"}
+                  onChange={(e) => set("resendApiKey", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>OpenAI API key (quiz drafts)</Label>
+                <Input
+                  type="password"
+                  placeholder={settings._hasOpenaiKey ? "••••••••" : "sk-…"}
+                  onChange={(e) => set("openaiApiKey", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Google OAuth client ID</Label>
+                <Input
+                  value={settings.googleClientId || ""}
+                  onChange={(e) => set("googleClientId", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Google OAuth client secret</Label>
+                <Input
+                  type="password"
+                  placeholder={settings._hasGoogleSecret ? "••••••••" : ""}
+                  onChange={(e) => set("googleClientSecret", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Microsoft OAuth client ID</Label>
+                <Input
+                  value={settings.microsoftClientId || ""}
+                  onChange={(e) => set("microsoftClientId", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Microsoft OAuth client secret</Label>
+                <Input
+                  type="password"
+                  placeholder={settings._hasMicrosoftSecret ? "••••••••" : ""}
+                  onChange={(e) => set("microsoftClientSecret", e.target.value)}
+                />
+              </div>
             </CardContent>
           </Card>
 

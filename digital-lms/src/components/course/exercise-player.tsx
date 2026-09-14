@@ -78,6 +78,12 @@ export function ExercisePlayer({ exercise }: { exercise: Exercise }) {
           {kind.replace("_", " ")}
           {kind === "coding" && exercise.language ? ` · ${exercise.language}` : ""}
         </p>
+        {kind === "coding" && (
+          <p className="text-xs text-amber-700">
+            Practice check only — JavaScript may run locally in the browser; other languages use
+            simple string matching. Not a secure code sandbox.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {kind === "coding" && (

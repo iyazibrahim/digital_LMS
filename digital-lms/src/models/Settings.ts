@@ -14,11 +14,19 @@ export interface ISettings {
   stripeSecretKey?: string;
   stripeWebhookSecret?: string;
   enablePayments: boolean;
-  /** @deprecated migrated to enableBulletin */
+  /** @deprecated migrated to enableBulletin / enableJobs */
   enableJobBoard?: boolean;
   enableBulletin: boolean;
+  enableJobs: boolean;
   enablePrograms: boolean;
   enableDiscussions: boolean;
+  enableEvaluations: boolean;
+  resendApiKey?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
+  microsoftClientId?: string;
+  microsoftClientSecret?: string;
+  openaiApiKey?: string;
   minWatchPercent: number;
   minReadSeconds: number;
   minScormSeconds: number;
@@ -45,8 +53,16 @@ const SettingsSchema = new Schema<ISettings>(
     enablePayments: { type: Boolean, default: false },
     enableJobBoard: { type: Boolean, default: true },
     enableBulletin: { type: Boolean, default: true },
+    enableJobs: { type: Boolean, default: true },
     enablePrograms: { type: Boolean, default: true },
     enableDiscussions: { type: Boolean, default: true },
+    enableEvaluations: { type: Boolean, default: true },
+    resendApiKey: String,
+    googleClientId: String,
+    googleClientSecret: String,
+    microsoftClientId: String,
+    microsoftClientSecret: String,
+    openaiApiKey: String,
     minWatchPercent: { type: Number, default: 80 },
     minReadSeconds: { type: Number, default: 20 },
     minScormSeconds: { type: Number, default: 30 },
@@ -72,11 +88,21 @@ export async function getSettings() {
   if (!doc) {
     doc = await Settings.create({});
   }
-  // Migrate legacy enableJobBoard → enableBulletin once
+  // Migrate legacy enableJobBoard → enableBulletin / enableJobs once
+  let dirty = false;
   if (doc.enableBulletin === undefined || doc.enableBulletin === null) {
     doc.enableBulletin = doc.enableJobBoard !== false;
-    await doc.save();
+    dirty = true;
   }
+  if (doc.enableJobs === undefined || doc.enableJobs === null) {
+    doc.enableJobs = doc.enableJobBoard !== false;
+    dirty = true;
+  }
+  if (doc.enableEvaluations === undefined || doc.enableEvaluations === null) {
+    doc.enableEvaluations = true;
+    dirty = true;
+  }
+  if (dirty) await doc.save();
   return doc;
 }
 
@@ -90,8 +116,12 @@ export function publicSettings(settings: ISettings) {
     primaryColor: settings.primaryColor,
     enablePayments: settings.enablePayments,
     enableBulletin: settings.enableBulletin ?? settings.enableJobBoard !== false,
+    enableJobs: settings.enableJobs ?? settings.enableJobBoard !== false,
     enablePrograms: settings.enablePrograms,
     enableDiscussions: settings.enableDiscussions,
+    enableEvaluations: settings.enableEvaluations !== false,
+    hasGoogleOAuth: !!(settings.googleClientId || process.env.GOOGLE_CLIENT_ID),
+    hasMicrosoftOAuth: !!(settings.microsoftClientId || process.env.MICROSOFT_CLIENT_ID),
     minWatchPercent: settings.minWatchPercent ?? 80,
     minReadSeconds: settings.minReadSeconds ?? 20,
     minScormSeconds: settings.minScormSeconds ?? 30,
@@ -113,8 +143,18 @@ export function adminSettingsView(settings: ISettings) {
       ? mask(settings.stripeWebhookSecret)
       : "",
     defaultCertificateHtml: settings.defaultCertificateHtml,
+    googleClientId: settings.googleClientId || process.env.GOOGLE_CLIENT_ID || "",
+    microsoftClientId: settings.microsoftClientId || process.env.MICROSOFT_CLIENT_ID || "",
+    resendApiKey: settings.resendApiKey ? "••••••••" : "",
+    openaiApiKey: settings.openaiApiKey ? "••••••••" : "",
     _hasZoomSecret: !!settings.zoomClientSecret,
     _hasStripeSecret: !!settings.stripeSecretKey,
     _hasStripeWebhook: !!settings.stripeWebhookSecret,
+    _hasResendKey: !!(settings.resendApiKey || process.env.RESEND_API_KEY),
+    _hasOpenaiKey: !!(settings.openaiApiKey || process.env.OPENAI_API_KEY),
+    _hasGoogleSecret: !!(settings.googleClientSecret || process.env.GOOGLE_CLIENT_SECRET),
+    _hasMicrosoftSecret: !!(
+      settings.microsoftClientSecret || process.env.MICROSOFT_CLIENT_SECRET
+    ),
   };
 }

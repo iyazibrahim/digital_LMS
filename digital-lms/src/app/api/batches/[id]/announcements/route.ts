@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { Batch } from "@/models/Batch";
+import { Batch, BatchEnrollment } from "@/models/Batch";
 import { requireSession, jsonError } from "@/lib/auth";
 import { PRIVILEGED_ROLES } from "@/lib/constants";
+import { notifyMany } from "@/lib/notify";
 
 export async function POST(
   req: NextRequest,
@@ -21,6 +22,21 @@ export async function POST(
       createdBy: session.sub as never,
     } as never);
     await batch.save();
+
+    const ens = await BatchEnrollment.find({ batchId: id, status: "active" })
+      .select("userId")
+      .lean();
+    await notifyMany(
+      ens.map((e) => e.userId),
+      {
+        type: "announcement",
+        title: `Batch announcement: ${body.title}`,
+        body: String(body.body || "").slice(0, 500),
+        href: `/batches/${batch.slug}`,
+        email: true,
+      }
+    );
+
     return NextResponse.json(batch);
   } catch (err) {
     return jsonError(err);

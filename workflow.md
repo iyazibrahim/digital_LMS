@@ -130,7 +130,35 @@
 - Seed users are created only from `SEED_*_EMAIL` / `SEED_*_PASSWORD` env vars (no hardcoded fallbacks). Compose and `.env.example` leave those blank.
 - README/workflow document env var names instead of real credentials.
 
+### 2026-09-14 — Competitive roadmap implementation (Phases 1–4)
 
+Incubator + academic ops parity against Frappe Learning / Classroom / TalentLMS gaps:
 
+**Phase 1 — Daily use**
+- Forgot / reset password (`/forgot-password`, `/reset-password`, token model + email)
+- In-app notification bell + email via Resend (or console fallback)
+- My Learning dashboard (`/dashboard`); logged-in `/` redirects there
+- Course catalog search / category / tag filters
+- Restored public Jobs board (Bulletin stays news); Settings `enableJobs`
 
+**Phase 2 — Cohort ops**
+- Studio Gradebook (assignment inbox + open-quiz review + course roster CSV)
+- Due dates on quizzes/assignments; learner `/calendar` + ICS download
+- Batch roster invite/bulk-add/drop; real attendance present/absent/late/excused
+- Program `enforceOrder` hard gating on enroll + learn player
+- Batch announcements email the cohort
+
+**Phase 3 — Incubator**
+- Cohort applications (requireApplication → staff accept/waitlist/reject)
+- Mentor notes API + Studio batch UI
+- Batch cohort forum
+- Studio Coupons UI; certificate `/verify/[code]`; analytics at-risk + per-course
+
+**Phase 4 — Polish**
+- Google / Microsoft SSO (env or Settings credentials)
+- AI quiz draft endpoint + New Quiz UI (OpenAI or editable templates)
+- Honest copy for tab-switch monitoring and coding “practice checks”
+- Learn player mobile order (content first)
+
+Validation: `npm run build` passed.
 

@@ -32,11 +32,16 @@ export async function POST(req: NextRequest) {
       .toString(36)
       .slice(2, 6)
       .toUpperCase()}`;
+    const verificationCode = `V-${Math.random().toString(36).slice(2, 10).toUpperCase()}${Date.now()
+      .toString(36)
+      .slice(-4)
+      .toUpperCase()}`;
 
     const certificate = await Certificate.create({
       userId: body.userId,
       batchId: body.batchId,
       certificateNumber,
+      verificationCode,
       recipientName: body.recipientName || user.name,
       courseTitle: body.courseTitle,
       issuedBy: session.sub,

@@ -11,6 +11,7 @@ export default function NewAssignmentPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [maxFileSizeMb, setMaxFileSizeMb] = useState(20);
+  const [dueAt, setDueAt] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +22,12 @@ export default function NewAssignmentPage() {
     const res = await fetch("/api/assignments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, maxFileSizeMb }),
+      body: JSON.stringify({
+        title,
+        description,
+        maxFileSizeMb,
+        dueAt: dueAt || undefined,
+      }),
     });
     const data = await res.json();
     setLoading(false);
@@ -49,6 +55,14 @@ export default function NewAssignmentPage() {
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Due date (optional)</Label>
+              <Input
+                type="datetime-local"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Max file size (MB)</Label>

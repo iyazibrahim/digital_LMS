@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const body = await req.json();
     const quiz = await Quiz.create({ ...body, createdBy: session.sub });
-    return NextResponse.json(quiz, { status: 201 });
+    return NextResponse.json({ quiz }, { status: 201 });
   } catch (err) {
     return jsonError(err);
   }

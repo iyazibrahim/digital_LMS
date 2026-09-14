@@ -6,6 +6,7 @@ export interface IAssignment {
   description?: string;
   allowedFileTypes: string[];
   maxFileSizeMb: number;
+  dueAt?: Date;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,7 @@ const AssignmentSchema = new Schema<IAssignment>(
       default: [".pdf", ".doc", ".docx", ".zip", ".png", ".jpg"],
     },
     maxFileSizeMb: { type: Number, default: 20 },
+    dueAt: Date,
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

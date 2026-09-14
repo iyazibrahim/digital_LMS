@@ -19,3 +19,8 @@ export { Payment, Coupon } from "./Payment";
 export { DiscussionThread } from "./Discussion";
 export { ProgrammingExercise, ProgrammingSubmission } from "./ProgrammingExercise";
 export { Settings, getSettings } from "./Settings";
+export { Notification } from "./Notification";
+export { PasswordResetToken } from "./PasswordReset";
+export { BatchApplication } from "./BatchApplication";
+export { MentorNote } from "./MentorNote";
+export { BatchForumThread } from "./BatchForum";

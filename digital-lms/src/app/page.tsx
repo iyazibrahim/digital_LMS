@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, Award, Newspaper, Video, Layers } from "lucide-react";
 import { getAllowSignup } from "@/lib/public-access";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +36,15 @@ const pillars = [
   },
   {
     icon: Newspaper,
-    title: "Bulletin",
-    body: "Share news and announcements with learners through a built-in bulletin board.",
+    title: "Bulletin & jobs",
+    body: "Share news on the bulletin and career opportunities on the job board.",
   },
 ];
 
 export default async function HomePage() {
+  const session = await getSession();
+  if (session) redirect("/dashboard");
+
   const allowSignup = await getAllowSignup();
 
   return (

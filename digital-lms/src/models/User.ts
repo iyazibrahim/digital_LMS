@@ -33,6 +33,8 @@ export interface IUser {
   preferredIndustries: string[];
   isActive: boolean;
   mustChangePassword: boolean;
+  googleId?: string;
+  microsoftId?: string;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -76,6 +78,8 @@ const UserSchema = new Schema<IUser>(
     preferredIndustries: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },
     mustChangePassword: { type: Boolean, default: false },
+    googleId: { type: String, sparse: true, unique: true },
+    microsoftId: { type: String, sparse: true, unique: true },
     lastLoginAt: Date,
   },
   { timestamps: true }

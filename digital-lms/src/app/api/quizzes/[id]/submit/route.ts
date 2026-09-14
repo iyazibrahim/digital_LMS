@@ -15,8 +15,13 @@ export async function POST(
     const quiz = await Quiz.findById(id);
     if (!quiz) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    if (quiz.dueAt && new Date() > new Date(quiz.dueAt)) {
+      return NextResponse.json({ error: "Quiz deadline has passed" }, { status: 400 });
+    }
+
     let score = 0;
     let maxScore = 0;
+    let hasOpenPending = false;
     const graded = quiz.questions.map(
       (q: {
         _id: unknown;
@@ -29,11 +34,16 @@ export async function POST(
           (a: { questionId: string }) => String(a.questionId) === String(q._id)
         );
         let pointsAwarded = 0;
-        let isCorrect = false;
+        let isCorrect: boolean | undefined = false;
         if (q.type === "open") {
           const text = (ans?.openAnswer || "").trim();
-          isCorrect = text.length > 0;
-          pointsAwarded = isCorrect ? q.points : 0;
+          // Open answers need instructor review — do not auto-pass
+          hasOpenPending = true;
+          isCorrect = undefined;
+          pointsAwarded = 0;
+          if (!text) {
+            isCorrect = false;
+          }
         } else {
           const selected: number[] = ans?.selectedOptionIndexes || [];
           const correct = q.options
@@ -58,7 +68,8 @@ export async function POST(
     );
 
     const percent = maxScore ? Math.round((score / maxScore) * 100) : 0;
-    const passed = percent >= quiz.passingScore;
+    const status = hasOpenPending ? "pending_review" : "auto_graded";
+    const passed = hasOpenPending ? false : percent >= quiz.passingScore;
 
     const submission = await QuizSubmission.create({
       quizId: quiz._id,
@@ -70,6 +81,7 @@ export async function POST(
       maxScore,
       percent,
       passed,
+      status,
       violationCount: body.violationCount || 0,
       autoSubmitted: !!body.autoSubmitted,
       submittedAt: new Date(),
@@ -81,6 +93,10 @@ export async function POST(
       passed,
       score,
       maxScore,
+      status,
+      message: hasOpenPending
+        ? "Submitted — open answers await instructor review."
+        : undefined,
     });
   } catch (err) {
     return jsonError(err);

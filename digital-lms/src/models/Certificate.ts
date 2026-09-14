@@ -88,6 +88,7 @@ export interface ICertificate {
   batchId?: Types.ObjectId;
   templateId?: Types.ObjectId;
   certificateNumber: string;
+  verificationCode?: string;
   issuedAt: Date;
   issuedBy?: Types.ObjectId;
   recipientName: string;
@@ -101,6 +102,7 @@ const CertificateSchema = new Schema<ICertificate>(
     batchId: { type: Schema.Types.ObjectId, ref: "Batch" },
     templateId: { type: Schema.Types.ObjectId, ref: "CertificateTemplate" },
     certificateNumber: { type: String, required: true, unique: true },
+    verificationCode: { type: String, unique: true, sparse: true, index: true },
     issuedAt: { type: Date, default: Date.now },
     issuedBy: { type: Schema.Types.ObjectId, ref: "User" },
     recipientName: { type: String, required: true },

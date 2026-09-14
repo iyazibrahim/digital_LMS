@@ -16,6 +16,11 @@ export async function POST(
     if (!course || !course.published) {
       return NextResponse.json({ error: "Course not available" }, { status: 404 });
     }
+    const { assertProgramOrder } = await import("@/lib/program-order");
+    const order = await assertProgramOrder(session.sub, id);
+    if (!order.ok) {
+      return NextResponse.json({ error: order.message }, { status: 403 });
+    }
     if (course.paid) {
       return NextResponse.json(
         { error: "This course requires payment. Use checkout." },
@@ -31,6 +36,15 @@ export async function POST(
       });
       course.enrolledCount += 1;
       await course.save();
+      const { notifyUser } = await import("@/lib/notify");
+      await notifyUser({
+        userId: session.sub,
+        type: "enrollment",
+        title: `Enrolled in ${course.title}`,
+        body: "You can continue learning from My Learning.",
+        href: `/courses/${course.slug}`,
+        email: true,
+      });
     }
     return NextResponse.json(enrollment);
   } catch (err) {

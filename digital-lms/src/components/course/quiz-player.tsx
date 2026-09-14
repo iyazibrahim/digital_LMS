@@ -39,6 +39,8 @@ export function QuizPlayer({
     passed: boolean;
     score: number;
     maxScore: number;
+    status?: string;
+    message?: string;
   } | null>(null);
   const [violations, setViolations] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -118,7 +120,8 @@ export function QuizPlayer({
         {quiz.description && <p className="text-sm text-stone-500">{quiz.description}</p>}
         {quiz.enableProctoring && (
           <p className="text-xs text-amber-700">
-            Proctoring on · violations {violations}/{quiz.maxViolations ?? 3}
+            Tab-focus monitoring on · switches logged {violations}/{quiz.maxViolations ?? 3}. This is
+            not webcam proctoring.
           </p>
         )}
       </CardHeader>
@@ -162,8 +165,17 @@ export function QuizPlayer({
         ))}
         {result ? (
           <p className="rounded-lg bg-stone-50 p-3 text-sm">
-            Score {result.score}/{result.maxScore} ({result.percent}%) —{" "}
-            {result.passed ? "Passed" : "Not passed"}
+            {result.status === "pending_review" || result.message ? (
+              <>
+                Score so far {result.score}/{result.maxScore} ({result.percent}%) —{" "}
+                {result.message || "Open answers await instructor review."}
+              </>
+            ) : (
+              <>
+                Score {result.score}/{result.maxScore} ({result.percent}%) —{" "}
+                {result.passed ? "Passed" : "Not passed"}
+              </>
+            )}
           </p>
         ) : (
           <Button onClick={() => submit(false)} disabled={loading}>

@@ -41,10 +41,21 @@ export default async function CertificatePrintPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-6 flex items-center justify-between print:hidden">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
           <h1 className="font-serif text-2xl text-blue-950">Certificate</h1>
           <p className="text-sm text-stone-500">{certificate.certificateNumber}</p>
+          {certificate.verificationCode && (
+            <p className="text-xs text-stone-400">
+              Verify:{" "}
+              <a
+                className="text-blue-700 hover:underline"
+                href={`/verify/${certificate.verificationCode}`}
+              >
+                /verify/{certificate.verificationCode}
+              </a>
+            </p>
+          )}
         </div>
         <PrintButton />
       </div>

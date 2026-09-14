@@ -23,8 +23,16 @@ const ALLOWED_PATCH = [
   "stripeWebhookSecret",
   "enablePayments",
   "enableBulletin",
+  "enableJobs",
   "enablePrograms",
   "enableDiscussions",
+  "enableEvaluations",
+  "resendApiKey",
+  "googleClientId",
+  "googleClientSecret",
+  "microsoftClientId",
+  "microsoftClientSecret",
+  "openaiApiKey",
   "minWatchPercent",
   "minReadSeconds",
   "minScormSeconds",
@@ -37,6 +45,10 @@ const SECRET_FIELDS = new Set<PatchKey>([
   "zoomClientSecret",
   "stripeSecretKey",
   "stripeWebhookSecret",
+  "resendApiKey",
+  "googleClientSecret",
+  "microsoftClientSecret",
+  "openaiApiKey",
 ]);
 
 export async function GET() {
@@ -73,7 +85,10 @@ export async function PATCH(req: NextRequest) {
     }
 
     if ("enableBulletin" in body) {
-      settings.enableJobBoard = !!settings.enableBulletin;
+      settings.enableJobBoard = !!settings.enableBulletin || !!settings.enableJobs;
+    }
+    if ("enableJobs" in body) {
+      settings.enableJobBoard = !!settings.enableBulletin || !!settings.enableJobs;
     }
 
     await settings.save();

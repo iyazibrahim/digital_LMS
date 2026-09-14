@@ -131,17 +131,38 @@ export async function issueCertificate(userId: string, courseId: string, batchId
     .toString(36)
     .slice(2, 6)
     .toUpperCase()}`;
+  const verificationCode = `V-${Math.random().toString(36).slice(2, 10).toUpperCase()}${Date.now()
+    .toString(36)
+    .slice(-4)
+    .toUpperCase()}`;
 
-  return Certificate.create({
+  const cert = await Certificate.create({
     userId,
     courseId,
     batchId,
     templateId: template?._id,
     certificateNumber,
+    verificationCode,
     recipientName: user.name,
     courseTitle: course.title,
     issuedAt: new Date(),
   });
+
+  try {
+    const { notifyUser } = await import("@/lib/notify");
+    await notifyUser({
+      userId,
+      type: "certificate",
+      title: "Certificate issued",
+      body: `You earned a certificate for ${course.title}.`,
+      href: `/certificates/${cert._id}`,
+      email: true,
+    });
+  } catch {
+    /* non-fatal */
+  }
+
+  return cert;
 }
 
 export function renderCertificateHtml(

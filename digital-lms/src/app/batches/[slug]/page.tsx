@@ -9,6 +9,7 @@ import { getSession } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { BatchEnrollButton } from "@/components/batch/enroll-button";
+import { BatchForum } from "@/components/batch/batch-forum";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,11 @@ export default async function BatchDetailPage({
         {enrolled ? (
           <p className="text-blue-800">You are enrolled in this batch.</p>
         ) : (
-          <BatchEnrollButton batchId={String(batch._id)} paid={batch.paid} />
+          <BatchEnrollButton
+            batchId={String(batch._id)}
+            paid={batch.paid}
+            requireApplication={!!batch.requireApplication}
+          />
         )}
       </div>
 
@@ -125,6 +130,10 @@ export default async function BatchDetailPage({
             ))}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <BatchForum batchId={String(batch._id)} canPost={enrolled} />
       </div>
     </div>
   );

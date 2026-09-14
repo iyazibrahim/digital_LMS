@@ -18,7 +18,14 @@ export interface ILiveClass {
   meetingUrl?: string;
   zoomMeetingId?: string;
   provider: "zoom" | "google_meet" | "manual";
+  /** @deprecated use attendance */
   attendees: Types.ObjectId[];
+  attendance: {
+    userId: Types.ObjectId;
+    status: "present" | "absent" | "late" | "excused";
+    markedAt: Date;
+    markedBy?: Types.ObjectId;
+  }[];
   createdBy: Types.ObjectId;
 }
 
@@ -44,6 +51,7 @@ export interface IBatch {
   paid: boolean;
   price: number;
   currency: string;
+  requireApplication: boolean;
   timetable: ITimetableItem[];
   liveClasses: ILiveClass[];
   announcements: IAnnouncement[];
@@ -80,6 +88,21 @@ const LiveClassSchema = new Schema<ILiveClass>(
       default: "manual",
     },
     attendees: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    attendance: {
+      type: [
+        {
+          userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+          status: {
+            type: String,
+            enum: ["present", "absent", "late", "excused"],
+            default: "present",
+          },
+          markedAt: { type: Date, default: Date.now },
+          markedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        },
+      ],
+      default: [],
+    },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { _id: true, timestamps: true }
@@ -108,6 +131,7 @@ const BatchSchema = new Schema<IBatch>(
     paid: { type: Boolean, default: false },
     price: { type: Number, default: 0 },
     currency: { type: String, default: "MYR" },
+    requireApplication: { type: Boolean, default: false },
     timetable: { type: [TimetableSchema], default: [] },
     liveClasses: { type: [LiveClassSchema], default: [] },
     announcements: { type: [AnnouncementSchema], default: [] },

@@ -78,6 +78,81 @@ export async function GET() {
     const enrollmentSeries = fillSeries(recentEnrollments, days, "createdAt");
     const completionSeries = fillSeries(recentCompletions, days, "completedAt");
 
+    // At-risk: no heartbeat / progress update in 7 days, incomplete, or recent quiz fails
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const activeEnrollments = await Enrollment.find({ completed: false })
+      .populate("userId", "name email")
+      .populate("courseId", "title slug")
+      .limit(500)
+      .lean();
+
+    const atRisk: {
+      userId: string;
+      name?: string;
+      email?: string;
+      courseTitle?: string;
+      courseSlug?: string;
+      progressPercent: number;
+      reason: string;
+    }[] = [];
+    for (const en of activeEnrollments) {
+      const lastHb = en.lessonProgress
+        ?.map((p) => p.lastHeartbeatAt)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0];
+      const stale =
+        !lastHb || new Date(lastHb) < weekAgo
+          ? !en.updatedAt || new Date(en.updatedAt) < weekAgo
+          : false;
+      const fails = await QuizSubmission.countDocuments({
+        userId: en.userId,
+        courseId: en.courseId,
+        passed: false,
+        submittedAt: { $gte: weekAgo },
+      });
+      if (stale || fails >= 2 || (en.progressPercent || 0) < 10) {
+        const user = en.userId as unknown as { _id?: unknown; name?: string; email?: string };
+        const course = en.courseId as unknown as { title?: string; slug?: string };
+        atRisk.push({
+          userId: String(user?._id || en.userId),
+          name: user?.name,
+          email: user?.email,
+          courseTitle: course?.title,
+          courseSlug: course?.slug,
+          progressPercent: en.progressPercent || 0,
+          reason: fails >= 2 ? "quiz_fails" : stale ? "inactive_7d" : "low_progress",
+        });
+      }
+    }
+
+    // Optional notify for top at-risk (once per request only when ?notify=1)
+    // Keep default off to avoid spam
+
+    // Per-course completion snapshot
+    const courseStats = await Course.find()
+      .select("title enrolledCount")
+      .limit(50)
+      .lean();
+    const perCourse: {
+      courseId: string;
+      title: string;
+      enrollments: number;
+      completions: number;
+      completionRate: number;
+    }[] = [];
+    for (const c of courseStats) {
+      const total = await Enrollment.countDocuments({ courseId: c._id });
+      const done = await Enrollment.countDocuments({ courseId: c._id, completed: true });
+      perCourse.push({
+        courseId: String(c._id),
+        title: c.title,
+        enrollments: total,
+        completions: done,
+        completionRate: total ? Math.round((done / total) * 100) : 0,
+      });
+    }
+
     return NextResponse.json({
       counts: {
         users,
@@ -88,6 +163,7 @@ export async function GET() {
         certificates,
         applications,
         quizSubs,
+        atRisk: atRisk.length,
       },
       series: {
         signups,
@@ -105,6 +181,8 @@ export async function GET() {
         quizSubs,
       },
       signupsByDay: signups,
+      atRisk: atRisk.slice(0, 50),
+      perCourse,
     });
   } catch (err) {
     return jsonError(err);

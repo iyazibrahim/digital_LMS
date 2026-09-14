@@ -19,9 +19,12 @@ export interface IQuiz {
   passingScore: number;
   maxAttempts: number;
   timeLimitMinutes?: number;
+  dueAt?: Date;
   shuffleQuestions: boolean;
   showCorrectAnswers: boolean;
   enableProctoring: boolean;
+  /** tab_switch logging only — not webcam surveillance */
+  proctoringMode: "off" | "tab_switch";
   maxViolations: number;
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -50,9 +53,15 @@ const QuizSchema = new Schema<IQuiz>(
     passingScore: { type: Number, default: 70 },
     maxAttempts: { type: Number, default: 0 },
     timeLimitMinutes: Number,
+    dueAt: Date,
     shuffleQuestions: { type: Boolean, default: false },
     showCorrectAnswers: { type: Boolean, default: true },
     enableProctoring: { type: Boolean, default: false },
+    proctoringMode: {
+      type: String,
+      enum: ["off", "tab_switch"],
+      default: "off",
+    },
     maxViolations: { type: Number, default: 3 },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
@@ -80,10 +89,14 @@ export interface IQuizSubmission {
   maxScore: number;
   percent: number;
   passed: boolean;
+  status: "auto_graded" | "pending_review" | "graded";
   violationCount: number;
   startedAt: Date;
   submittedAt: Date;
   autoSubmitted: boolean;
+  feedback?: string;
+  gradedBy?: Types.ObjectId;
+  gradedAt?: Date;
 }
 
 const QuizAnswerSchema = new Schema<IQuizAnswer>(
@@ -108,10 +121,18 @@ const QuizSubmissionSchema = new Schema<IQuizSubmission>(
     maxScore: { type: Number, default: 0 },
     percent: { type: Number, default: 0 },
     passed: { type: Boolean, default: false },
+    status: {
+      type: String,
+      enum: ["auto_graded", "pending_review", "graded"],
+      default: "auto_graded",
+    },
     violationCount: { type: Number, default: 0 },
     startedAt: { type: Date, default: Date.now },
     submittedAt: { type: Date, default: Date.now },
     autoSubmitted: { type: Boolean, default: false },
+    feedback: String,
+    gradedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    gradedAt: Date,
   },
   { timestamps: true }
 );

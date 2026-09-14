@@ -7,17 +7,20 @@ Stack: **Next.js (App Router) + TypeScript + Tailwind + MongoDB + JWT**.
 ## Features
 
 - Courses → chapters → lessons (text, YouTube/video, PDF)
-- Quizzes (single / multi / open) + proctoring violations
-- Assignments with file upload + grading
-- Programming exercises
+- Quizzes (single / multi / open) + tab-switch logging; open answers need instructor review
+- Assignments with file upload + grading + due dates
+- Programming exercises (practice checks — not a full sandbox)
 - SCORM package upload (unzip + launch)
-- Live batches, timetable, announcements, Zoom/Meet live classes
-- Certificates (auto on completion)
-- Programs, discussions, analytics
-- Job board + applications
-- Stripe checkout (optional) + coupons
+- Live batches, timetable, announcements (emailed), Zoom/Meet live classes, roster, attendance
+- Cohort applications, mentor notes, batch forums
+- Certificates (auto on completion) + public `/verify/[code]`
+- Programs with enforced course order, discussions, analytics (at-risk + per-course)
+- Job board + applications (separate from Bulletin)
+- Stripe checkout (optional) + coupons Studio UI
 - Evaluator slot booking
-- Studio CMS for instructors and admins
+- My Learning dashboard, calendar, notifications, forgot password
+- Google / Microsoft SSO (optional), AI quiz drafts (optional OpenAI)
+- Studio CMS for instructors and admins (incl. Gradebook)
 
 ## Local development
 

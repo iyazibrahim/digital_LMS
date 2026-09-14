@@ -33,17 +33,19 @@ npm run dev
 
 Open http://localhost:3000
 
-Accounts are **auto-created on first DB connect** (manual `npm run seed` is optional).
+Accounts are **auto-created on first DB connect** when seed env vars are set (manual `npm run seed` is optional).
 
 ### Seed accounts (ENV)
 
-| Role | Email | Password | ENV |
-|------|-------|----------|-----|
-| Admin | admin@digitalpenang.my | admin123 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` |
-| Instructor | instructor@digitalpenang.my | instructor123 | `SEED_INSTRUCTOR_*` |
-| Student | student@digitalpenang.my | student123 | `SEED_STUDENT_*` |
+Set these in `.env.local` (local) or Dokploy / Compose `.env` (production). Leave a role blank to skip it.
 
-Set `SEED_RESET_ADMIN_PASSWORD=1` to force-reset the admin password from ENV on next boot.
+| Role | Email env | Password env | Name env |
+|------|-----------|--------------|----------|
+| Admin | `SEED_ADMIN_EMAIL` | `SEED_ADMIN_PASSWORD` | `SEED_ADMIN_NAME` |
+| Instructor | `SEED_INSTRUCTOR_EMAIL` | `SEED_INSTRUCTOR_PASSWORD` | `SEED_INSTRUCTOR_NAME` |
+| Student | `SEED_STUDENT_EMAIL` | `SEED_STUDENT_PASSWORD` | `SEED_STUDENT_NAME` |
+
+Do not commit real emails or passwords. Set `SEED_RESET_ADMIN_PASSWORD=1` to force-reset the admin password from ENV on next boot, then set it back to `0`.
 
 ## Production (Docker / Dokploy)
 
@@ -70,13 +72,12 @@ Environment must include:
 
 ```
 MONGODB_URI=mongodb://mongo:27017/digital-lms
-SEED_ADMIN_EMAIL=admin@digitalpenang.my
-SEED_ADMIN_PASSWORD=admin123
-SEED_RESET_ADMIN_PASSWORD=1
-SHOW_ERROR_DETAILS=1
+SEED_ADMIN_EMAIL=<your-admin-email>
+SEED_ADMIN_PASSWORD=<strong-password>
+SHOW_ERROR_DETAILS=0
 NEXT_PUBLIC_APP_URL=https://lms.iyazbrhm.cloud
 ```
 
-After a successful login, set `SEED_RESET_ADMIN_PASSWORD=0`.
+After a successful login, keep `SEED_RESET_ADMIN_PASSWORD=0` unless you intend to reset the admin password from ENV.
 
 Health check: `https://lms.iyazbrhm.cloud/api/health`

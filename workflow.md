@@ -39,7 +39,7 @@
 
 1. Start MongoDB (`docker compose up -d mongo` or full stack).
 2. Open the app — admin/student accounts auto-seed from ENV on first DB connect.
-3. Log in with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (defaults: admin@digitalpenang.my / admin123).
+3. Set `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in ENV, then log in with those values.
 4. Point Cloudflare Tunnel at host `:8090` when deploying.
 5. Add Stripe/Zoom credentials in Studio → Settings if needed.
 
@@ -123,6 +123,13 @@
 
 - Studio Users: **Create user** opens a modal form instead of an inline card.
 - After create, the generated password is shown in the same modal. Overlay, Escape, X, and Done stay locked until the admin copies it (clipboard fallback checkbox if copy is blocked).
+
+### 2026-09-14 — Remove hardcoded seed credentials
+
+- Login page no longer shows demo emails/passwords.
+- Seed users are created only from `SEED_*_EMAIL` / `SEED_*_PASSWORD` env vars (no hardcoded fallbacks). Compose and `.env.example` leave those blank.
+- README/workflow document env var names instead of real credentials.
+
 
 
 

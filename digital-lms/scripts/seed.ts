@@ -8,7 +8,8 @@ import { connectDB } from "../src/lib/db";
 async function main() {
   await connectDB();
   console.log("Seed complete (ensureSeed ran via connectDB).");
-  console.log("Admin:", process.env.SEED_ADMIN_EMAIL || "admin@digitalpenang.my");
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL || "").trim();
+  console.log(adminEmail ? `Admin seeded from SEED_ADMIN_EMAIL (${adminEmail})` : "Admin not seeded (set SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD)");
   process.exit(0);
 }
 

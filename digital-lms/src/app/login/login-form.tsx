@@ -85,12 +85,6 @@ export default function LoginForm({
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-
-          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-xs text-slate-600">
-            <p className="font-medium text-blue-900">Demo accounts (auto-seeded)</p>
-            <p className="mt-1">Admin: admin@digitalpenang.my / admin123</p>
-            <p>Student: student@digitalpenang.my / student123</p>
-          </div>
           {allowSignup ? (
             <p className="mt-4 text-center text-sm text-stone-500">
               No account?{" "}

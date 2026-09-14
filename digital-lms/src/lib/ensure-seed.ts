@@ -15,7 +15,7 @@ declare global {
 }
 
 /**
- * Ensures at least one admin exists (from ENV) and optional demo content.
+ * Creates seed users from ENV (no hardcoded emails/passwords).
  * Safe to call on every request — runs once per process.
  */
 export async function ensureSeed() {
@@ -28,57 +28,96 @@ export async function ensureSeed() {
   return global.__dpSeedPromise;
 }
 
+function envValue(name: string) {
+  return (process.env[name] || "").trim();
+}
+
+async function upsertSeedUser({
+  emailVar,
+  passwordVar,
+  nameVar,
+  fallbackName,
+  roles,
+  reset = false,
+}: {
+  emailVar: string;
+  passwordVar: string;
+  nameVar: string;
+  fallbackName: string;
+  roles: Role[];
+  reset?: boolean;
+}) {
+  const email = envValue(emailVar).toLowerCase();
+  const password = envValue(passwordVar);
+  if (!email && !password) return null;
+  if (!email || !password) {
+    console.warn(`[seed] ${emailVar} and ${passwordVar} must both be set to seed that account`);
+    return null;
+  }
+
+  const name = envValue(nameVar) || fallbackName;
+  let user = await User.findOne({ email });
+  if (!user) {
+    user = await User.create({
+      email,
+      name,
+      passwordHash: await hashPassword(password),
+      roles,
+    });
+    console.log(`[seed] Created account ${email}`);
+    return user;
+  }
+
+  if (reset) {
+    user.passwordHash = await hashPassword(password);
+    user.roles = roles;
+    user.isActive = true;
+    if (name) user.name = name;
+    await user.save();
+    console.log(`[seed] Reset password for ${email}`);
+  }
+  return user;
+}
+
 async function runSeed() {
   await getSettings();
 
-  const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@digitalpenang.my").toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
-  const instructorEmail = (
-    process.env.SEED_INSTRUCTOR_EMAIL || "instructor@digitalpenang.my"
-  ).toLowerCase();
-  const instructorPassword = process.env.SEED_INSTRUCTOR_PASSWORD || "instructor123";
-  const studentEmail = (process.env.SEED_STUDENT_EMAIL || "student@digitalpenang.my").toLowerCase();
-  const studentPassword = process.env.SEED_STUDENT_PASSWORD || "student123";
+  let admin = await upsertSeedUser({
+    emailVar: "SEED_ADMIN_EMAIL",
+    passwordVar: "SEED_ADMIN_PASSWORD",
+    nameVar: "SEED_ADMIN_NAME",
+    fallbackName: "Admin",
+    roles: ["admin", "instructor", "evaluator"],
+    reset: process.env.SEED_RESET_ADMIN_PASSWORD === "1",
+  });
 
-  let admin = await User.findOne({ email: adminEmail });
-  if (!admin) {
-    admin = await User.create({
-      email: adminEmail,
-      name: process.env.SEED_ADMIN_NAME || "Digital Penang Admin",
-      passwordHash: await hashPassword(adminPassword),
-      roles: ["admin", "instructor", "evaluator"] as Role[],
-    });
-    console.log(`[seed] Created admin ${adminEmail}`);
-  } else if (process.env.SEED_RESET_ADMIN_PASSWORD === "1") {
-    admin.passwordHash = await hashPassword(adminPassword);
-    admin.roles = ["admin", "instructor", "evaluator"] as Role[];
-    admin.isActive = true;
-    await admin.save();
-    console.log(`[seed] Reset admin password for ${adminEmail}`);
-  }
+  let instructor = await upsertSeedUser({
+    emailVar: "SEED_INSTRUCTOR_EMAIL",
+    passwordVar: "SEED_INSTRUCTOR_PASSWORD",
+    nameVar: "SEED_INSTRUCTOR_NAME",
+    fallbackName: "Instructor",
+    roles: ["instructor", "evaluator"],
+  });
 
-  let instructor = await User.findOne({ email: instructorEmail });
-  if (!instructor) {
-    instructor = await User.create({
-      email: instructorEmail,
-      name: "Aisha Instructor",
-      passwordHash: await hashPassword(instructorPassword),
-      roles: ["instructor", "evaluator"] as Role[],
-    });
-  }
-
-  let student = await User.findOne({ email: studentEmail });
-  if (!student) {
-    student = await User.create({
-      email: studentEmail,
-      name: "Ravi Student",
-      passwordHash: await hashPassword(studentPassword),
-      roles: ["student"] as Role[],
-    });
-  }
+  await upsertSeedUser({
+    emailVar: "SEED_STUDENT_EMAIL",
+    passwordVar: "SEED_STUDENT_PASSWORD",
+    nameVar: "SEED_STUDENT_NAME",
+    fallbackName: "Student",
+    roles: ["student"],
+  });
 
   // Demo content only when no courses exist
   if ((await Course.countDocuments()) > 0) return;
+
+  if (!admin) {
+    admin = await User.findOne({ roles: "admin" });
+  }
+  if (!admin) {
+    console.warn("[seed] No admin from ENV or database; skip demo content");
+    return;
+  }
+  instructor = instructor || admin;
 
   let quiz = await Quiz.findOne({ title: "Digital Skills Basics Quiz" });
   if (!quiz) {
@@ -140,7 +179,10 @@ async function runSeed() {
       tags: ["beginner", "penang", "digital"],
       published: true,
       publishedAt: new Date(),
-      instructors: [admin._id, instructor._id],
+      instructors:
+        String(instructor._id) === String(admin._id)
+          ? [admin._id]
+          : [admin._id, instructor._id],
       createdBy: admin._id,
       enableCertification: true,
       chapters: [

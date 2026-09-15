@@ -158,13 +158,30 @@ export async function evaluateLessonGate(
 
   if (hasQuiz) {
     if (kind === "empty") kind = "quiz";
+    // Accept a passing attempt OR an open-answer submission awaiting / after instructor review.
+    // Also accept legacy open-answer attempts that predate the `status` field.
     const sub = await QuizSubmission.findOne({
       quizId: lesson.quizId,
       userId,
-      passed: true,
-    }).lean();
+    })
+      .sort({ submittedAt: -1 })
+      .lean();
     if (!sub) {
       reasons.push("Pass the quiz");
+    } else {
+      const hasOpenText = (sub.answers || []).some(
+        (a: { openAnswer?: string }) => !!(a.openAnswer && String(a.openAnswer).trim())
+      );
+      const accepted =
+        sub.passed === true ||
+        sub.status === "pending_review" ||
+        sub.status === "graded" ||
+        (hasOpenText && sub.status !== "auto_graded");
+      // Legacy: open text + not explicitly auto-passed → treat as submitted for progression
+      const legacyOpenOk = hasOpenText && sub.passed === false && !sub.status;
+      if (!accepted && !legacyOpenOk) {
+        reasons.push("Pass the quiz (previous attempt did not meet the passing score)");
+      }
     }
   }
 

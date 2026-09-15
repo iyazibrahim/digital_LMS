@@ -23,6 +23,8 @@ declare global {
         el: HTMLElement | string,
         opts: {
           videoId: string;
+          width?: number | string;
+          height?: number | string;
           playerVars?: Record<string, number | string>;
           events?: {
             onReady?: (e: { target: YTPlayer }) => void;
@@ -75,22 +77,35 @@ function YouTubeTracked({ videoId }: { videoId: string }) {
   useEffect(() => {
     let cancelled = false;
     let tick: ReturnType<typeof setInterval> | null = null;
-    const host = mountRef.current;
-    if (!host) return;
+    if (!mountRef.current) return;
 
     void loadYouTubeApi().then(() => {
       if (cancelled || !mountRef.current || !window.YT) return;
       // YT.Player replaces the mount node; keep a stable child to destroy cleanly
       const target = document.createElement("div");
+      target.style.width = "100%";
+      target.style.height = "100%";
       mountRef.current.innerHTML = "";
       mountRef.current.appendChild(target);
 
       const player = new window.YT.Player(target, {
         videoId,
-        playerVars: { rel: 0, modestbranding: 1 },
+        width: "100%",
+        height: "100%",
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
           onReady: (e) => {
             lastT.current = e.target.getCurrentTime();
+            // Ensure iframe fills the aspect-ratio box (YT sometimes leaves default px size)
+            const iframe = mountRef.current?.querySelector("iframe");
+            if (iframe) {
+              iframe.style.position = "absolute";
+              iframe.style.inset = "0";
+              iframe.style.width = "100%";
+              iframe.style.height = "100%";
+              iframe.removeAttribute("width");
+              iframe.removeAttribute("height");
+            }
           },
           onStateChange: (e) => {
             if (tick) {
@@ -130,8 +145,8 @@ function YouTubeTracked({ videoId }: { videoId: string }) {
   }, [videoId]);
 
   return (
-    <div className="aspect-video overflow-hidden rounded-xl bg-stone-100">
-      <div ref={mountRef} className="h-full w-full" />
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-stone-900">
+      <div ref={mountRef} className="absolute inset-0 h-full w-full [&_iframe]:absolute [&_iframe]:inset-0 [&_iframe]:h-full [&_iframe]:w-full" />
     </div>
   );
 }
@@ -168,7 +183,17 @@ function Html5Tracked({ url }: { url: string }) {
     };
   }, [url]);
 
-  return <video ref={ref} src={url} controls className="w-full rounded-xl" />;
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-stone-900">
+      <video
+        ref={ref}
+        src={url}
+        controls
+        playsInline
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+    </div>
+  );
 }
 
 export function VideoEmbed({ url }: { url: string }) {

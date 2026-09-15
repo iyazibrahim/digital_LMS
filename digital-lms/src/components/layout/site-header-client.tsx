@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearAuthTokens } from "@/lib/client-auth";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -82,58 +82,49 @@ export function SiteHeaderClient({
         { href: "/dashboard", label: "My Learning" },
         ...publicNav,
         { href: "/calendar", label: "Calendar" },
+        { href: "/evaluations", label: "Evaluations" },
       ]
     : publicNav;
 
   return (
     <header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <div className="flex items-center gap-3 md:gap-8">
-          <button
-            type="button"
-            className="rounded-md p-2 text-blue-900 hover:bg-stone-100 md:hidden"
-            aria-label="Menu"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-          <Link href="/" className="font-serif text-xl tracking-tight text-blue-900">
-            Digital Penang <span className="text-blue-600">LMS</span>
-          </Link>
-          <nav className="hidden items-center gap-5 text-sm text-stone-600 md:flex">
-            {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-blue-800">
-                {item.label}
-              </Link>
-            ))}
-            {isStaffUser && (
-              <Link href="/studio" className="font-medium text-blue-800 hover:text-blue-950">
-                Studio
-              </Link>
-            )}
-          </nav>
-        </div>
-        <div className="flex items-center gap-2">
-            {name ? (
-              <Link
-                href="/evaluations"
-                className="hidden text-sm text-stone-600 hover:text-blue-800 sm:inline"
-              >
-                Evaluations
-              </Link>
-            ) : null}
-            {name ? (
+      <div className="flex h-16 w-full items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <button
+          type="button"
+          className="rounded-md p-2 text-blue-900 hover:bg-stone-100 lg:hidden"
+          aria-label="Menu"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        <Link href="/" className="shrink-0 font-serif text-xl tracking-tight text-blue-900">
+          Digital Penang <span className="text-blue-600">LMS</span>
+        </Link>
+        <nav className="hidden min-w-0 flex-1 items-center gap-6 text-sm text-stone-600 lg:flex">
+          {nav.map((item) => (
+            <Link key={item.href} href={item.href} className="whitespace-nowrap hover:text-blue-800">
+              {item.label}
+            </Link>
+          ))}
+          {isStaffUser && (
+            <Link href="/studio" className="whitespace-nowrap font-medium text-blue-800 hover:text-blue-950">
+              Studio
+            </Link>
+          )}
+        </nav>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {name ? (
             <>
               <NotificationBell />
-              <Link href="/profile" className="hidden sm:inline">
-                <Button variant="ghost" size="sm">
-                  {name}
-                </Button>
-              </Link>
-              <a
-                href="/api/auth/logout"
-                onClick={onLogoutClick}
+              <Link
+                href="/profile"
+                title={name}
+                aria-label={`${name} profile`}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-800 hover:bg-blue-100"
               >
+                <User className="h-4 w-4" aria-hidden />
+              </Link>
+              <a href="/api/auth/logout" onClick={onLogoutClick}>
                 <Button variant="outline" size="sm" type="button">
                   Log out
                 </Button>
@@ -156,8 +147,8 @@ export function SiteHeaderClient({
         </div>
       </div>
       {open && (
-        <nav className="border-t border-blue-50 bg-white px-4 py-3 md:hidden">
-          <div className="mx-auto flex max-w-6xl flex-col gap-1">
+        <nav className="border-t border-blue-50 bg-white px-4 py-3 lg:hidden">
+          <div className="flex flex-col gap-1">
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -168,15 +159,6 @@ export function SiteHeaderClient({
                 {item.label}
               </Link>
             ))}
-            {name && (
-              <Link
-                href="/evaluations"
-                className="rounded-lg px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-100"
-                onClick={() => setOpen(false)}
-              >
-                Evaluations
-              </Link>
-            )}
             {name && (
               <Link
                 href="/profile"

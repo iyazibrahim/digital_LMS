@@ -15,6 +15,7 @@ const links = [
   { href: "/studio/assignments", label: "Assignments" },
   { href: "/studio/exercises", label: "Exercises" },
   { href: "/studio/batches", label: "Batches" },
+  { href: "/studio/gradebook", label: "Gradebook" },
   { href: "/studio/certificates", label: "Certificates" },
   { href: "/studio/programs", label: "Programs" },
   { href: "/studio/bulletin", label: "Bulletin" },

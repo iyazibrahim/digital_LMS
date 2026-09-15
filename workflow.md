@@ -180,3 +180,9 @@ Validation: `npm run build` passed.
 - **Fix:** GET `/api/quizzes/[id]/submission` restores latest attempt; `QuizPlayer` hydrates answers/result on mount; `lesson-criteria` treats `pending_review` / `graded` (and legacy open submits) as meeting the quiz gate. Gate refresh also runs on pending review.
 - **Commit:** `2ab5f6f` (pushed to `main`). Build passed.
 
+### 2026-09-15 — Open-answer review path + header layout
+
+- **Review path:** Staff (admin / instructor / evaluator) review student open answers in **Studio → Gradebook → Inbox → Open quizzes pending review**. Header **Evaluations** is learner slot booking; staff slot management is **Studio → Evaluations**.
+- **Dashboards:** Students use `/dashboard` (My Learning). Admin, instructor, and evaluator share the same **Studio** console (`/studio`) — no separate instructor/evaluator dashboard yet.
+- **Header:** Evaluations moved into the main nav (same style as Calendar/Studio). Bar uses full width instead of `max-w-6xl`. Account name replaced with a profile icon linking to `/profile`. Gradebook added to the Studio sidebar (it existed as a page but was missing from the staff nav).
+

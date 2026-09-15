@@ -173,3 +173,10 @@ Incubator + academic ops parity against Frappe Learning / Classroom / TalentLMS 
 
 Validation: `npm run build` passed.
 
+### 2026-09-15 — Knowledge check “reset” on reopen
+
+- **Symptoms:** Learner filled Knowledge check yesterday; today answers looked blank / needed redo; next lesson stayed Locked even after submit with open answers awaiting review.
+- **Root causes:** (1) `QuizPlayer` never loaded prior `QuizSubmission` — always started blank. (2) Lesson gate required `passed: true`; open-answer submits use `status: "pending_review"` with `passed: false`, so next lesson stayed locked.
+- **Fix:** GET `/api/quizzes/[id]/submission` restores latest attempt; `QuizPlayer` hydrates answers/result on mount; `lesson-criteria` treats `pending_review` / `graded` (and legacy open submits) as meeting the quiz gate. Gate refresh also runs on pending review.
+- **Commit:** `2ab5f6f` (pushed to `main`). Build passed.
+
